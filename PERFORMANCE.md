@@ -144,3 +144,60 @@ The size of each gain is unknown until measured with the same `scripts/stress.py
 - **Load with `explain=false`, and load with maximum-size inputs** (for example 200 parts and very long symptom text). Large inputs are covered only by the single-request latency test (TESTING.md TC-007).
 - **Behaviour under `--limit-concurrency`** or any other overload protection.
 - **Live sampling profile of the server under load.** py-spy needs root on macOS; it was not run. The stage breakdown in §2.3 is in-process only.
+
+## 7. Time and cost impact (estimate)
+
+This section is an **estimate**, not a measurement. No real case volumes, agent costs or agent timings were available. Each figure is labelled with where it comes from.
+
+### 7.1 Inputs
+
+| Figure | Value | Source |
+|---|---|---|
+| Time an agent takes to decide a case today | 20–45 minutes | **Brief** (§2) |
+| Consistency today | "two agents given the same case often decide differently" | **Brief** (§2) |
+| Where that time goes | Looking things up "across the warranty system, the parts catalogue and the price list" | **Brief** (§2) |
+| Time for the service to decide | p95 between 1 and 8 ms at every step up to 2,000 concurrent agents, all worker counts | **Measured** (§2.2) |
+| Capacity of the shipped configuration | ≈2,600 decisions/s within the 1 s budget (1 worker, up to 4,000 agents) | **Measured** (§2.1) |
+
+### 7.2 What the saving depends on (interpretation)
+
+The service decides from structured inputs: part prices, lead times, replacement price and warranty status. Those are the values the brief says agents currently spend their time looking up. So the time saved depends on how the inputs reach the service:
+
+| Integration | What the agent still does | Time saved per case |
+|---|---|---|
+| Inputs filled in automatically from the warranty, parts and price systems | Reviews the decision and handles escalations | Most of the 20–45 min. Assuming ~2 min to review: **≈18–43 min** |
+| Agent still looks the inputs up by hand | The lookups; the service automates only applying the policy | **Unknown.** Needs timing of real agents |
+
+Escalated cases still need a person in either setup. The escalation rate on real cases is unknown. This repo's synthetic and hand-written cases (DATA.md) were built to cover every rule, so their mix of decisions says nothing about real escalation rates.
+
+### 7.3 How to calculate it
+
+```
+hours saved per month = cases per month × minutes saved per case ÷ 60
+cost saved per month  = hours saved per month × fully loaded agent cost per hour
+```
+
+**Illustrative example. The volume and the hourly cost are assumptions, not data:**
+
+| Input | Value | Basis |
+|---|---|---|
+| Cases per month | 1,000 | Assumed |
+| Minutes saved per case | 30 | Brief midpoint (32.5 min) minus ~2 min review; assumes automatic inputs |
+| Agent cost per hour | ₹300 | Assumed |
+| **Hours saved per month** | 1,000 × 30 ÷ 60 = **500** (≈3 full-time agents at ~160 h/month) | Calculated |
+| **Cost saved per month** | 500 × ₹300 = **₹1,50,000** | Calculated |
+
+Replace the assumed rows with real figures before using this result anywhere.
+
+### 7.4 Benefits not expressed in money
+
+- **Consistency:** rules are deterministic, so the same case always gets the same decision (tested: TESTING.md R28). This addresses the inconsistency the brief describes.
+- **Turnaround:** milliseconds instead of minutes, so the decision can be shown while the agent is still with the customer.
+- **Auditability:** every response names the rule that decided it (for example D1b or D2), and `?explain=true` returns the full rule trace.
+
+### 7.5 Not established
+
+- The real case volume, agent cost and agent review time.
+- How much of today's 20–45 minutes is lookup and how much is applying the policy.
+- The escalation rate on real cases, and the cost of a wrong automated decision. A wrong "replace" costs a product; a wrong "repair" costs a second visit.
+- Integration effort with the warranty, parts and price systems. None exists in this project.
