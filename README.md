@@ -112,6 +112,7 @@ Extra material, not required by the brief:
 | File | Purpose |
 |---|---|
 | [EXPLANATION.md](EXPLANATION.md) | Full walkthrough: architecture, every function, rules, interview Q&A |
+| [PERFORMANCE.md](PERFORMANCE.md) | Load and stress results (Locust): throughput, latency, breaking point per worker count, CPU bottleneck |
 | [research/RESEARCH_NOTES.md](research/RESEARCH_NOTES.md) | Design rationale with verified references |
 | `examples/` | The three reference cases from the brief, with expected responses |
 | `scripts/` | Synthetic data generator, metric evaluator, test-report generator |
