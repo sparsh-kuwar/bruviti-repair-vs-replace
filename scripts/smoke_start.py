@@ -34,7 +34,7 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES = ("C-2001", "C-2002", "C-2003")
@@ -121,10 +121,11 @@ def check_examples(base: str) -> List[str]:
     return problems
 
 
-def run(command: List[str], port: int, timeout: float, log: Path) -> int:
+def run(command: Union[str, List[str]], port: int, timeout: float, log: Path) -> int:
     env = dict(os.environ, PORT=str(port))
     started = time.monotonic()
-    print(f"starting: {' '.join(command)}  (port {port}, deadline {timeout:.0f}s, log {log})", flush=True)
+    shown = command if isinstance(command, str) else " ".join(command)
+    print(f"starting: {shown}  (port {port}, deadline {timeout:.0f}s, log {log})", flush=True)
     with open(log, "wb") as out:
         kwargs = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
         proc = subprocess.Popen(command, cwd=ROOT, env=env, stdout=out, stderr=subprocess.STDOUT, **kwargs)
@@ -167,7 +168,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--timeout", type=float, default=60.0, help="seconds to wait for /health (default 60)")
     ap.add_argument("--log", type=Path, default=ROOT / "server.log")
     args = ap.parse_args(argv)
-    command = shlex.split(args.command, posix=os.name != "nt") if args.command else default_command()
+    if not args.command:
+        command: Union[str, List[str]] = default_command()
+    elif os.name == "nt":
+        command = args.command  # Windows parses its own command line; shlex would keep the quotes
+    else:
+        command = shlex.split(args.command)
     return run(command, args.port, args.timeout, args.log)
 
 
