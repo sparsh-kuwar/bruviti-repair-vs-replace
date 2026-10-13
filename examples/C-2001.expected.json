@@ -1,0 +1,7 @@
+{
+  "case_id": "C-2001",
+  "decision": "repair",
+  "estimated_repair_cost": 8150.0,
+  "confidence": 0.9,
+  "reason": "Out of warranty, repair cost 23% of replacement, age within 70% of expected life: rule D2."
+}

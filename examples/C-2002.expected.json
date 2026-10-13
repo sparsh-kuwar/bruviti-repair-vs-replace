@@ -1,0 +1,7 @@
+{
+  "case_id": "C-2002",
+  "decision": "replace",
+  "estimated_repair_cost": 16675.0,
+  "confidence": 0.85,
+  "reason": "In warranty and part lead time 28 days exceeds the 21-day limit: rule D1b."
+}

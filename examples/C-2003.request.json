@@ -1,0 +1,23 @@
+{
+  "case_id": "C-2003",
+  "product_category": "dishwasher",
+  "product_age_months": 50,
+  "purchase_price": 41000,
+  "replacement_price": null,
+  "warranty_status": "extended",
+  "fault_category": "water_leak",
+  "parts": [
+    {
+      "sku": "DW-PMP-031",
+      "description": "Drain pump",
+      "price": null,
+      "lead_time_days": 6
+    }
+  ],
+  "labour_hours": 1.0,
+  "labour_rate_per_hour": 900,
+  "technician_travel_minutes": 70,
+  "prior_repairs_12m": 2,
+  "customer_sentiment": "negative",
+  "symptom_text": "third leak this year, I want this sorted or taken away"
+}

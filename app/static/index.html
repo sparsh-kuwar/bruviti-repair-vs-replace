@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Repair or Replace</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <a class="skip" href="#case-form">Skip to case form</a>
+  <header class="topbar">
+    <div class="wrap">
+      <h1>Repair or Replace</h1>
+      <p class="sub">Applies the service policy (rules D0–D6) to one case. Runs entirely on this machine.</p>
+    </div>
+  </header>
+
+  <main class="wrap layout">
+    <form id="case-form" novalidate aria-describedby="form-help">
+      <p id="form-help" class="help">Leave a field blank if it is not known; blank is sent as <code>null</code>, which is different from 0.</p>
+
+      <div class="toolbar" role="group" aria-label="Examples and form actions">
+        <span class="toolbar-label">Load example:</span>
+        <button type="button" class="btn ghost" data-example="C-2001">C-2001 · repair</button>
+        <button type="button" class="btn ghost" data-example="C-2002">C-2002 · replace</button>
+        <button type="button" class="btn ghost" data-example="C-2003">C-2003 · escalate</button>
+        <button type="button" class="btn ghost" id="clear-btn">Clear form</button>
+      </div>
+
+      <div id="error-summary" class="error-summary" role="alert" tabindex="-1" hidden>
+        <h2>Fix these fields</h2>
+        <ul></ul>
+      </div>
+
+      <fieldset>
+        <legend>Case and product</legend>
+        <div class="grid">
+          <div class="field">
+            <label for="case_id">Case ID <span class="req">required</span></label>
+            <input id="case_id" name="case_id" type="text" autocomplete="off" aria-describedby="err-case_id">
+            <p class="err" id="err-case_id"></p>
+          </div>
+          <div class="field">
+            <label for="product_category">Product category</label>
+            <select id="product_category" name="product_category" aria-describedby="err-product_category">
+              <option value="">— not provided —</option>
+              <option>washing_machine</option><option>refrigerator</option><option>dishwasher</option>
+              <option>oven_or_cooktop</option><option>air_conditioner</option><option>water_heater</option>
+              <option>microwave</option>
+            </select>
+            <p class="err" id="err-product_category"></p>
+          </div>
+          <div class="field">
+            <label for="product_age_months">Product age (months)</label>
+            <input id="product_age_months" name="product_age_months" type="number" min="0" step="1" inputmode="numeric" data-kind="int" aria-describedby="err-product_age_months">
+            <p class="err" id="err-product_age_months"></p>
+          </div>
+          <div class="field">
+            <label for="warranty_status">Warranty status</label>
+            <select id="warranty_status" name="warranty_status" aria-describedby="err-warranty_status">
+              <option>in_warranty</option><option>extended</option><option>out_of_warranty</option>
+              <option selected>unknown</option>
+            </select>
+            <p class="err" id="err-warranty_status"></p>
+          </div>
+          <div class="field">
+            <label for="purchase_price">Purchase price</label>
+            <input id="purchase_price" name="purchase_price" type="number" min="0" step="any" inputmode="decimal" data-kind="num" aria-describedby="hint-purchase err-purchase_price">
+            <p class="hint" id="hint-purchase">Recorded only; no rule uses it.</p>
+            <p class="err" id="err-purchase_price"></p>
+          </div>
+          <div class="field">
+            <label for="replacement_price">Replacement price</label>
+            <input id="replacement_price" name="replacement_price" type="number" min="0" step="any" inputmode="decimal" data-kind="num" aria-describedby="err-replacement_price">
+            <p class="err" id="err-replacement_price"></p>
+          </div>
+          <div class="field">
+            <label for="fault_category">Fault category</label>
+            <select id="fault_category" name="fault_category" aria-describedby="err-fault_category">
+              <option value="">— not provided —</option>
+              <option>no_power</option><option>not_heating</option><option>not_cooling</option>
+              <option>water_leak</option><option>drainage_or_blockage</option><option>noise_or_vibration</option>
+              <option>door_seal_or_latch</option><option>control_panel_or_display</option>
+              <option>electrical_or_control_board</option><option>motor_or_drive</option>
+              <option>installation_or_setup</option><option>other</option>
+            </select>
+            <p class="err" id="err-fault_category"></p>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Parts</legend>
+        <p class="help">Every listed part is treated as required for the repair.</p>
+        <div class="parts-wrap">
+          <table class="parts" aria-describedby="err-parts">
+            <thead>
+              <tr><th scope="col">SKU</th><th scope="col">Description</th><th scope="col">Price</th><th scope="col">Lead time (days)</th><th scope="col"><span class="sr">Actions</span></th></tr>
+            </thead>
+            <tbody id="parts-body"></tbody>
+          </table>
+        </div>
+        <p class="err" id="err-parts"></p>
+        <button type="button" class="btn ghost" id="add-part">+ Add part</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Labour and travel</legend>
+        <div class="grid">
+          <div class="field">
+            <label for="labour_hours">Labour hours</label>
+            <input id="labour_hours" name="labour_hours" type="number" min="0" step="any" inputmode="decimal" data-kind="num" aria-describedby="err-labour_hours">
+            <p class="err" id="err-labour_hours"></p>
+          </div>
+          <div class="field">
+            <label for="labour_rate_per_hour">Labour rate per hour</label>
+            <input id="labour_rate_per_hour" name="labour_rate_per_hour" type="number" min="0" step="any" inputmode="decimal" data-kind="num" aria-describedby="err-labour_rate_per_hour">
+            <p class="err" id="err-labour_rate_per_hour"></p>
+          </div>
+          <div class="field">
+            <label for="technician_travel_minutes">Travel minutes (one way)</label>
+            <input id="technician_travel_minutes" name="technician_travel_minutes" type="number" min="0" step="1" inputmode="numeric" data-kind="int" aria-describedby="err-technician_travel_minutes">
+            <p class="err" id="err-technician_travel_minutes"></p>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>History and symptom</legend>
+        <div class="grid">
+          <div class="field">
+            <label for="prior_repairs_12m">Repairs in last 12 months</label>
+            <input id="prior_repairs_12m" name="prior_repairs_12m" type="number" min="0" step="1" inputmode="numeric" data-kind="int" aria-describedby="err-prior_repairs_12m">
+            <p class="err" id="err-prior_repairs_12m"></p>
+          </div>
+          <div class="field">
+            <label for="customer_sentiment">Customer sentiment</label>
+            <select id="customer_sentiment" name="customer_sentiment" aria-describedby="err-customer_sentiment">
+              <option value="">— not provided —</option>
+              <option>negative</option><option selected>neutral</option><option>positive</option>
+            </select>
+            <p class="err" id="err-customer_sentiment"></p>
+          </div>
+          <div class="field span">
+            <label for="symptom_text">Symptom text</label>
+            <textarea id="symptom_text" name="symptom_text" rows="3" aria-describedby="err-symptom_text"></textarea>
+            <p class="err" id="err-symptom_text"></p>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="actions">
+        <button type="submit" class="btn primary" id="decide-btn">Decide</button>
+        <span id="status" class="status" aria-live="polite"></span>
+      </div>
+    </form>
+
+    <section class="result" aria-labelledby="result-title">
+      <h2 id="result-title">Result</h2>
+      <div id="result" aria-live="polite">
+        <p class="empty">Fill in a case or load an example, then choose <strong>Decide</strong>.</p>
+      </div>
+    </section>
+  </main>
+
+  <template id="part-row">
+    <tr>
+      <td><input type="text" data-part="sku" aria-label="SKU"></td>
+      <td><input type="text" data-part="description" aria-label="Description"></td>
+      <td><input type="number" min="0" step="any" inputmode="decimal" data-part="price" data-kind="num" aria-label="Price (blank if unknown)"></td>
+      <td><input type="number" min="0" step="1" inputmode="numeric" data-part="lead_time_days" data-kind="int" aria-label="Lead time in days (blank if unknown)"></td>
+      <td><button type="button" class="btn icon" data-remove aria-label="Remove part">Remove</button></td>
+    </tr>
+  </template>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

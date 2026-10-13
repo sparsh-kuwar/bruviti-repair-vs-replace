@@ -1,0 +1,1045 @@
+[
+ {
+  "note": "baseline OOW 20%, young",
+  "case": {
+   "case_id": "H01",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "consistent wording",
+  "case": {
+   "case_id": "H02",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "Fridge is not cooling at all, compressor clicks on and off"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "smoke reported",
+  "case": {
+   "case_id": "H03",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "Smoke from the compressor area this morning"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "negated hazards",
+  "case": {
+   "case_id": "H04",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "not cooling. No smoke, no sparks."
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "brief-style contradiction",
+  "case": {
+   "case_id": "H05",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "Door won't stay shut and the light stays on"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "warranty synonym",
+  "case": {
+   "case_id": "H06",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "Under Warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "unknown, 20 months -> in warranty",
+  "case": {
+   "case_id": "H07",
+   "product_category": "refrigerator",
+   "product_age_months": 20,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "unknown",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "unknown, 30 months, 48% -> D2 repair",
+  "case": {
+   "case_id": "H08",
+   "product_category": "refrigerator",
+   "product_age_months": 30,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "unknown",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "part",
+     "price": 22000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 24000.0
+  }
+ },
+ {
+  "note": "unknown, 30 months, 52% -> D2 replace",
+  "case": {
+   "case_id": "H09",
+   "product_category": "refrigerator",
+   "product_age_months": 30,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "unknown",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "part",
+     "price": 24000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "replace",
+   "estimated_repair_cost": 26000.0
+  }
+ },
+ {
+  "note": "in warranty, lead 25 -> D1b",
+  "case": {
+   "case_id": "H10",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "in_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "part",
+     "price": 22000,
+     "lead_time_days": 25
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "replace",
+   "estimated_repair_cost": 24000.0
+  }
+ },
+ {
+  "note": "in warranty, lead unknown",
+  "case": {
+   "case_id": "H11",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "in_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "part",
+     "price": 8000,
+     "lead_time_days": null
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "OOW too old (76% of life)",
+  "case": {
+   "case_id": "H12",
+   "product_category": "refrigerator",
+   "product_age_months": 110,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "replace",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "long travel but 35% -> no D3",
+  "case": {
+   "case_id": "H13",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "part",
+     "price": 14000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 150,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 17600.0
+  }
+ },
+ {
+  "note": "long travel and 47% -> D3",
+  "case": {
+   "case_id": "H14",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "part",
+     "price": 20000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 150,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "replace",
+   "estimated_repair_cost": 23600.0
+  }
+ },
+ {
+  "note": "3 repairs + negative",
+  "case": {
+   "case_id": "H15",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 3,
+   "customer_sentiment": "negative",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "1 repair + negative",
+  "case": {
+   "case_id": "H16",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 1,
+   "customer_sentiment": "negative",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "part price missing",
+  "case": {
+   "case_id": "H17",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "part",
+     "price": null,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": null
+  }
+ },
+ {
+  "note": "replacement missing, ratio needed",
+  "case": {
+   "case_id": "H18",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": null,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "replacement missing, too old anyway",
+  "case": {
+   "case_id": "H19",
+   "product_category": "refrigerator",
+   "product_age_months": 120,
+   "purchase_price": 52000,
+   "replacement_price": null,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "replace",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "labour hours missing",
+  "case": {
+   "case_id": "H20",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": null,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": null
+  }
+ },
+ {
+  "note": "gas smell on a cooker",
+  "case": {
+   "case_id": "H21",
+   "product_category": "oven_or_cooktop",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_heating",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "smells like gas when the oven door opens"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "shock from geyser",
+  "case": {
+   "case_id": "H22",
+   "product_category": "water_heater",
+   "product_age_months": 20,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "water_leak",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "geyser leaking, got a small shock touching the tap"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "microwave arcing",
+  "case": {
+   "case_id": "H23",
+   "product_category": "microwave",
+   "product_age_months": 20,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_heating",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "arcing and flashes inside when running"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "text names a different appliance",
+  "case": {
+   "case_id": "H24",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "washing machine drum won't spin"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "text says warranty expired",
+  "case": {
+   "case_id": "H25",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "in_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "not cooling, warranty expired in March"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "format noise",
+  "case": {
+   "case_id": "H26",
+   "product_category": "Refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": "50,000",
+   "warranty_status": "Out Of Warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": "800",
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "travel missing",
+  "case": {
+   "case_id": "H27",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": null,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 9600.0
+  }
+ },
+ {
+  "note": "exactly 60% in warranty",
+  "case": {
+   "case_id": "H28",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "in_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "part",
+     "price": 28000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 30000.0
+  }
+ },
+ {
+  "note": "60.2% in warranty",
+  "case": {
+   "case_id": "H29",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "in_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "part",
+     "price": 28100,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "replace",
+   "estimated_repair_cost": 30100.0
+  }
+ },
+ {
+  "note": "extended, labour only",
+  "case": {
+   "case_id": "H30",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "extended",
+   "fault_category": "not_cooling",
+   "parts": [],
+   "labour_hours": 3,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 2800.0
+  }
+ },
+ {
+  "note": "negated burning smell",
+  "case": {
+   "case_id": "H31",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "no burning smell, it just stopped cooling"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "age 69% of life",
+  "case": {
+   "case_id": "H32",
+   "product_category": "refrigerator",
+   "product_age_months": 100,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "negation does not cross clause",
+  "case": {
+   "case_id": "H33",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "Not cooling; sparks seen at the plug socket"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "unfamiliar wording only",
+  "case": {
+   "case_id": "H34",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "Fan motor",
+     "price": 8000,
+     "lead_time_days": 5
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "customer called again, wants an engineer visit asap"
+  },
+  "expected": {
+   "decision": "repair",
+   "estimated_repair_cost": 10000.0
+  }
+ },
+ {
+  "note": "escalation beats D1b",
+  "case": {
+   "case_id": "H35",
+   "product_category": "refrigerator",
+   "product_age_months": 40,
+   "purchase_price": 52000,
+   "replacement_price": 50000,
+   "warranty_status": "in_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "RF-1",
+     "description": "part",
+     "price": 8000,
+     "lead_time_days": 30
+    }
+   ],
+   "labour_hours": 2,
+   "labour_rate_per_hour": 800,
+   "technician_travel_minutes": 30,
+   "prior_repairs_12m": 2,
+   "customer_sentiment": "negative",
+   "symptom_text": "fridge not cold enough"
+  },
+  "expected": {
+   "decision": "escalate",
+   "estimated_repair_cost": 10000.0
+  }
+ }
+]

@@ -1,0 +1,7 @@
+{
+  "case_id": "C-2003",
+  "decision": "escalate",
+  "estimated_repair_cost": null,
+  "confidence": 0.7,
+  "reason": "Two prior repairs with negative sentiment (rule D5) and part price missing; cannot cost the repair."
+}

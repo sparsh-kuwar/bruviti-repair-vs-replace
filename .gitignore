@@ -1,0 +1,29 @@
+# Virtual environments
+.venv/
+venv/
+env/
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+# Secrets and local config
+.env
+.env.*
+*.pem
+*.key
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+# Local artifacts (the synthetic corpus is regenerated deterministically)
+*.log
+data/*.jsonl
+# The confidential brief must never be committed
+*.pdf
+
+# Personal VibeWise learning notes (local only)
+.vibe-wise/

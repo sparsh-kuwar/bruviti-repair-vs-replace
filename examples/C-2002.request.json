@@ -1,0 +1,23 @@
+{
+  "case_id": "C-2002",
+  "product_category": "refrigerator",
+  "product_age_months": 8,
+  "purchase_price": 52000,
+  "replacement_price": 49000,
+  "warranty_status": "in_warranty",
+  "fault_category": "not_cooling",
+  "parts": [
+    {
+      "sku": "RF-CMP-220",
+      "description": "Compressor",
+      "price": 14500,
+      "lead_time_days": 28
+    }
+  ],
+  "labour_hours": 2.0,
+  "labour_rate_per_hour": 900,
+  "technician_travel_minutes": 25,
+  "prior_repairs_12m": 0,
+  "customer_sentiment": "negative",
+  "symptom_text": "fridge warm for 3 days, food spoiled"
+}

@@ -1,0 +1,23 @@
+{
+  "case_id": "C-2001",
+  "product_category": "washing_machine",
+  "product_age_months": 30,
+  "purchase_price": 38000,
+  "replacement_price": 36000,
+  "warranty_status": "out_of_warranty",
+  "fault_category": "motor_or_drive",
+  "parts": [
+    {
+      "sku": "WM-MTR-114",
+      "description": "Drive motor",
+      "price": 6200,
+      "lead_time_days": 4
+    }
+  ],
+  "labour_hours": 1.5,
+  "labour_rate_per_hour": 900,
+  "technician_travel_minutes": 40,
+  "prior_repairs_12m": 0,
+  "customer_sentiment": "neutral",
+  "symptom_text": "drum does not turn, motor hums"
+}
