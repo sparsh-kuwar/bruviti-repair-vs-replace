@@ -16,9 +16,9 @@ The script fails if any test fails, or if a catalogue row points at a test that 
 |---|---|
 | **Item under test** | The repair/replace decision service: `POST /decide`, `GET /health`, the page at `/`, and the start command `./run.sh` |
 | **Basis** | The assignment brief (§3 API contract, §4 rules, Appendices D–F) and the interpretations recorded in NOTES.md |
-| **In scope** | API contract; rules D0–D6 and their precedence; input validation and tolerance; text heuristics (hazards, negation, contradictions); missing-field behaviour; determinism; latency; offline operation; fresh-clone start-up; UI smoke and layout |
-| **Out of scope** | Accuracy on real appliance tickets (no real data available); load/soak testing beyond a latency bound; security penetration testing; mobile-device browsers (responsive widths are tested in desktop engines, not on physical phones); a real screen-reader session (automated accessibility checks run in CI; the manual VoiceOver/NVDA checklist in §3b is NOT RUN) |
-| **Levels** | Unit (cost, rules, text) → integration (HTTP via FastAPI `TestClient`, in-process) → system (fresh clone + `./run.sh` / `run.ps1` + real HTTP, in CI) → end-to-end UI in real browsers (`e2e/`, Playwright) → data-driven acceptance (synthetic corpus, hand-labelled fixtures, challenge set) |
+| **In scope** | API contract; rules D0–D6 and their precedence; input validation and tolerance; text heuristics (hazards, negation, contradictions); missing-field behaviour; determinism; latency; concurrency and stress (§6); offline operation; fresh-clone start-up; UI smoke and layout |
+| **Out of scope** | Accuracy on real appliance tickets (no real data available); soak testing (hours-long runs) and load from a separate machine (§6 runs the load generator on the same laptop); security penetration testing; mobile-device browsers (responsive widths are tested in desktop engines, not on physical phones); a real screen-reader session (automated accessibility checks run in CI; the manual VoiceOver/NVDA checklist in §3b is NOT RUN) |
+| **Levels** | Unit (cost, rules, text) → integration (HTTP via FastAPI `TestClient`, in-process) → system (fresh clone + `./run.sh` / `run.ps1` + real HTTP, in CI) → load and stress over real HTTP (Locust, §6) → end-to-end UI in real browsers (`e2e/`, Playwright) → data-driven acceptance (synthetic corpus, hand-labelled fixtures, challenge set) |
 | **Techniques** | Equivalence partitioning; boundary-value analysis at every threshold (just below / at / just above); decision tables for warranty × rule × missing input; precedence tests; negative and invalid-input testing; false-friend tests for text ("shock absorber", "fireplace", "current bill"); exploratory testing turned into regression tests; oracle tests against the brief's three examples |
 | **Oracles** | The brief's worked examples and rule text; labels fixed *before* running the engine for hand-labelled and challenge cases; scenario-by-construction labels for the synthetic corpus (not produced by the engine) |
 | **Environment** | CI: Linux, macOS and Windows × Python 3.9, 3.12, 3.13, 3.14 for the suite; fresh-clone start (`scripts/smoke_start.py`: `run.sh` on Linux/macOS, `run.ps1` on Windows; /health within 60 s) on all three OSes with Python 3.9 and 3.14; browser tests in Chromium, Firefox and WebKit on all three OSes. Local: macOS, Python 3.13 and 3.11. Pinned dependencies (`requirements.txt`, `requirements-e2e.txt`). Sockets and DNS are patched to raise during the unit suite, so the run proves offline operation; the browser tests fail if the page requests anything not served by the local server |
@@ -41,7 +41,7 @@ Every requirement maps to the automated tests that cover it (matched by test nam
 | R06 | reason is one sentence naming the deciding rule | Brief §3 | 4 | ✅ 4/4 | TC-013 |
 | R07 | GET /health returns 200 {"status": "ok"} | Brief §4 | 1 | ✅ 1/1 | TC-001, TC-143 |
 | R08 | Single page served at / by the same process; no remote assets | Brief §4–5 | 2 | ✅ 2/2 | TC-002, TC-003 |
-| R09 | Works with the network off; tests run offline | Brief §4–5 | 308 | ✅ 308/308 | — |
+| R09 | Works with the network off; tests run offline | Brief §4–5 | 310 | ✅ 310/310 | — |
 | R10 | Each request answered in under 1 second | Brief §4 | 1 | ✅ 1/1 | TC-007 |
 | R11 | D0 repair-cost formula; null only when it cannot be computed | Appendix D0 | 15 | ✅ 15/15 | TC-020, TC-021, TC-022, TC-023, TC-024, TC-025, TC-026 |
 | R12 | D1a in/extended warranty: replace if cost > 60% of replacement | Appendix D1 | 8 | ✅ 8/8 | TC-030, TC-031, TC-032 |
@@ -64,6 +64,7 @@ Every requirement maps to the automated tests that cover it (matched by test nam
 | R29 | Does not escalate everything | Brief §3 (metric) | 10 | ✅ 10/10 | TC-120, TC-130 |
 | R30 | Behaviour on unseen styles of data (challenge set) | Brief §4 ('will not look like yours') | 14 | ✅ 14/14 | TC-131, TC-132, TC-133 |
 | R31 | Starts from a fresh clone with one command; /health ready within a bounded time; Python 3.9-3.14 | Brief §4 ('runs from a fresh clone') | 11 | ✅ 11/11 | TC-140, TC-141, TC-142, TC-144 |
+| R32 | Correct under concurrent requests; capacity and breaking point measured (TESTING §6) | Design | 2 | ✅ 2/2 | TC-145, TC-146 |
 <!-- GENERATED:TRACEABILITY:END -->
 
 ## 3. Test-case catalogue
@@ -162,6 +163,8 @@ A selection of representative cases. The full suite has more, mostly parametrise
 | TC-142 | R31 | Negative (DEF-17) | No listener: bounded wait | launcher never binds, 3 s deadline | fails in < 20 s with process and port diagnostics | as expected | ✅ pass |
 | TC-143 | R07 | Contract | Health body must be exact | {"status":"starting"} | not ready | as expected | ✅ pass |
 | TC-144 | R31 | Regression (DEF-15) | Pins have Python 3.14 wheels | requirements.txt | pydantic >= 2.12 | as expected | ✅ pass |
+| TC-145 | R32 | Concurrency | Parallel /decide = sequential | 49 fixture cases x 5, 16 threads | every answer identical to the sequential one | as expected | ✅ pass |
+| TC-146 | R32 | Concurrency | Parallel /decide?explain=true = sequential | 49 fixture cases x 5, 16 threads, with trace | every answer and trace identical | as expected | ✅ pass |
 <!-- GENERATED:CATALOGUE:END -->
 
 ### 3a. UI checks
@@ -227,27 +230,29 @@ Each defect found during development, how it was found, and the regression test 
 | DEF-19 | Low | Windows CI | Browser report crashed after 66/66 tests passed: `UnicodeEncodeError` on "✅" | Windows console uses cp1252 | Report reconfigures stdout/stderr to UTF-8 | Windows browser job |
 | DEF-20 | Medium | CI latency test on slower runners (0.26–0.28 s vs the 0.25 s bound) | The worst-case request (200 parts, 14,600-character text) took about 122 ms locally | `_is_negated` re-tokenised the whole text for every hazard mention, so it was O(n²) | Scan a bounded window (400 chars, cut word dropped); now 26 ms locally, linear in text length. The 0.25 s bound was kept, not loosened | `test_hazard_detection_scales_linearly`, `test_negation_window_does_not_read_a_cut_word_as_negation`, `test_latency_well_under_one_second` |
 | DEF-08 | Medium | Code review, before the first test run | Contraction rule would have rewritten "element" as "eleme not" | Regex `n'?t` made the apostrophe optional | Require the apostrophe | `test_normalise_contractions` |
+| DEF-21 | Medium (test rig, not the service) | Stress test (§6), 2 and 4 workers | At exactly 5,000 users every multi-worker run failed 6–10% of requests with `OSError: [Errno 49] Can't assign requested address`, while server CPU had headroom and p95 was 4 ms | Locust's HTTP client (geventhttpclient) checks an idle pooled socket with `select()`, which raises for file descriptors above 1024. It then treated each such socket as dead and reconnected on every request. Above ~1,000 users per Locust process, closed sockets piled up in TIME_WAIT (12,344 seen with `netstat`; client side, not server) until the 16,384 macOS ephemeral ports ran out | `load/locustfile.py` replaces the liveness check with `poll()`, which has no 1024 limit. Rerun at 5,000 users: 0 errors, 0 sockets in TIME_WAIT. The first (wrong) results are kept in `load/results/steps-buggy-rig.csv` | Rerun in §6 (no errors at any step) |
 
 Open defects: none known. Known limitations, which are not defects, are listed in NOTES.md and DATA.md.
 
 ## 5. Latest run (unit and integration suite)
 
 <!-- GENERATED:LATEST-RUN:START -->
-- **Run at:** 2026-10-13 10:35 UTC
+- **Run at:** 2026-10-13 16:29 UTC
 - **Environment:** Python 3.13.7 on Darwin arm64; FastAPI 0.128.8, Pydantic 2.13.5; network blocked by `tests/conftest.py`
-- **Result:** ✅ PASS: 308 passed, 0 failed, 0 skipped, 308 total, 5.4 s
+- **Result:** ✅ PASS: 310 passed, 0 failed, 0 skipped, 310 total, 7.5 s
 
 | Test file | Tests | Passed | Failed | Time (s) |
 |---|---|---|---|---|
 | `tests/test_api.py` | 68 | 68 | 0 | 0.61 |
 | `tests/test_challenge.py` | 14 | 14 | 0 | 0.01 |
+| `tests/test_concurrency.py` | 2 | 2 | 0 | 2.04 |
 | `tests/test_corpora.py` | 8 | 8 | 0 | 0.23 |
 | `tests/test_cost.py` | 13 | 13 | 0 | 0.00 |
 | `tests/test_escalation.py` | 24 | 24 | 0 | 0.03 |
 | `tests/test_examples.py` | 6 | 6 | 0 | 0.01 |
 | `tests/test_rules.py` | 60 | 60 | 0 | 0.02 |
-| `tests/test_startup.py` | 11 | 11 | 0 | 4.48 |
-| `tests/test_text.py` | 104 | 104 | 0 | 0.04 |
+| `tests/test_startup.py` | 11 | 11 | 0 | 4.54 |
+| `tests/test_text.py` | 104 | 104 | 0 | 0.05 |
 
 Metric self-checks on our own data (the brief's metrics; **not** evidence of hidden-set accuracy):
 
@@ -289,3 +294,70 @@ Metric self-checks on our own data (the brief's metrics; **not** evidence of hid
 | `test_stale_banner_and_rerun` | ✅ | ✅ | ✅ |
 | `test_tab_order_follows_visual_order` | ✅ | ✅ | ✅ |
 <!-- GENERATED:E2E:END -->
+
+## 6. Concurrency and stress testing
+
+**Question:** how many support agents can use the service at once before it breaks, and what runs out first?
+
+### 6.1 Method
+
+| | |
+|---|---|
+| **Correctness under concurrency** | `tests/test_concurrency.py` (TC-145, TC-146): every fixture case sent from 16 threads at once, with very frequent thread switches, must get exactly the answer it gets when sent alone. Runs in the normal suite, offline |
+| **Tool** | [Locust](https://locust.io) 2.46.7 over real HTTP against `uvicorn` on 127.0.0.1 (`load/locustfile.py`). Install with `pip install -r requirements-load.txt` (not needed to run the service) |
+| **Simulated user** | A support agent: sends one case the way the page does (`POST /decide?explain=true`), waits 0.5–1.5 s, repeats. Cases rotate through the 49 hand-labelled and challenge fixtures, so short and long symptom text are both in the mix |
+| **Ramp** | Step load: 25 → 50 → … → 14,000 users. Each step warms up (5 s plus spawn time), then stats are reset and the step is measured for 15 s |
+| **Breaking point** | The first step where **p95 latency > 1 s** or errors > 1%. 1 s is the brief's per-request budget (§4), and a person is waiting on each answer. Requests slower than 10 s count as errors |
+| **Bottleneck evidence** | CPU time of the server (parent + all workers) and of Locust itself, sampled with `psutil` per step, in cores. If throughput stops rising while one resource is at its limit, that resource is the bottleneck |
+| **Hypothesis test** | Same ramp with 1, 2 and 4 uvicorn workers. If the single Python process is the limit, the ceiling should rise with workers |
+| **Run** | `.venv/bin/python scripts/stress.py --workers 1 2 4` (about 35 minutes); per-step results in `load/results/steps.csv` |
+| **Machine** | Apple M3 MacBook Air (4 performance + 4 efficiency cores), macOS, Python 3.13.7. Locust (4 processes) runs on the same machine, so server and load generator share 8 cores |
+
+### 6.2 Results
+
+**1 worker: the configuration `./run.sh` starts and the one graded.**
+
+| Users | Requests/s | p50 ms | p95 ms | p99 ms | Max ms | Errors | Server CPU (cores) | Locust CPU (cores) |
+|---|---|---|---|---|---|---|---|---|
+| 1,000 | 998 | 1 | 4 | 5 | 15 | 0 | 0.58 | 0.20 |
+| 2,000 | 1,990 | 1 | 3 | 6 | 38 | 0 | 0.72 | 0.25 |
+| 2,500 | 2,485 | 2 | 16 | 47 | 63 | 0 | 0.89 | 0.31 |
+| 3,000 | **2,885 (peak)** | 19 | 110 | 170 | 182 | 0 | **1.02** | 0.37 |
+| 4,000 | 2,582 | 520 | 720 | 760 | 785 | 0 | 1.03 | 0.49 |
+| 5,000 | 2,460 | 1,000 | **1,200 ✗** | 1,300 | 1,295 | 0 | 1.02 | 0.59 |
+
+**All worker counts:**
+
+| uvicorn workers | Peak requests/s | Last step within budget | Breaks at | How it breaks |
+|---|---|---|---|---|
+| 1 | 2,885 | 4,000 users (p95 720 ms, max 785 ms) | **5,000 users** | p95 1.2 s, 0 errors |
+| 2 | 4,954 | 7,000 users (p95 980 ms) | **8,000 users** | p95 1.8 s, 0 errors |
+| 4 | 5,913 | 7,000 users (p95 640 ms) | **8,000 users** | p95 1.2 s, 0 errors |
+
+No request failed in any run. The service never refused work: past its limit it queues requests and they get slower.
+
+**Where one request's CPU goes** (`scripts/profile_decide.py`, 10,000 requests in-process, no HTTP):
+
+| Part | µs per request | Share of the ~354 µs a request costs over HTTP |
+|---|---|---|
+| Rules engine (`policy.decide`; mostly regex scans of the symptom text in `app/text.py`) | 97 | 27% |
+| Parse + validate (pydantic) | 16 | 4% |
+| Response model + JSON | 20 | 6% |
+| HTTP, routing, thread-pool hand-off (uvicorn, Starlette, FastAPI) | ~221 | ~62% |
+
+The ~354 µs total is measured, not estimated: 1.02 cores ÷ 2,885 requests/s at the 1-worker peak.
+
+### 6.3 Bottleneck
+
+1. **With one worker the bottleneck is CPU in the one Python process.** At 3,000 users the server uses 1.02 cores, a full core, and throughput stops rising at about 2,900 requests/s. Python's GIL (global interpreter lock) lets only one thread run Python code at a time, so the thread pool's 40 threads cannot use a second core. Locust used under 0.6 cores, so the load generator was not the limit.
+2. **Past the limit, requests queue; they don't fail.** Latency rises (p95 16 ms → 110 ms → 720 ms → 1.2 s) while throughput stays flat, then falls: 2,885 → 2,460 requests/s. CPU per request rose about 17% (from 0.35 ms to 0.41 ms), because thousands of open connections and queued requests cost the event loop and thread pool extra work.
+3. **More workers raise the limit, which confirms the hypothesis.** 2 workers: ~4,950 requests/s on 2 cores (1.7×), breaking at 8,000 users instead of 5,000. 4 workers: ~5,900 requests/s. That is less than 4× because server (3.7 cores) and Locust (2.3 cores) were then sharing the laptop's 8 cores, half of them slower efficiency cores. Past 2 workers, **the test machine is the limit**, not the service. Measuring 4+ workers properly needs the load generator on a separate machine.
+4. **Most of a request's CPU is the web stack, not the rules.** About 60% is HTTP and framework work. The rules engine is about a quarter, mostly regex scanning of the symptom text.
+
+### 6.4 What this means against the brief
+
+- **Graded setup (1 worker, `./run.sh`):** every request answered in under 1 s, max 785 ms, up to **4,000 agents working at once** (about 2,600 decisions per second). The brief's 1 s budget is first broken at 5,000 agents.
+- **At light load** (up to about 2,000 agents) a request takes 1–4 ms at p95, far inside the budget. The brief does not say how many cases the graders send at once.
+- **If more capacity were ever needed:** run more workers (`--workers N`, one per core; the service is stateless so this needs no other change) or more machines behind a load balancer. Add a cap on in-flight requests (uvicorn `--limit-concurrency`) so overload returns a fast 503 instead of letting every request slow down. The start command was **not** changed: the brief asks for the API and the page to be served by one process on port 8000.
+- **Not tested:** soak runs over hours (memory growth), load from a second machine, and production network conditions.
+

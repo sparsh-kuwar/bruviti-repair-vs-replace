@@ -1,0 +1,5 @@
+# Load / stress testing (optional; not needed to run the service or the main tests).
+# Install:  pip install -r requirements-load.txt   then see LOAD_TEST.md
+-r requirements.txt
+locust==2.46.7
+psutil==7.2.2

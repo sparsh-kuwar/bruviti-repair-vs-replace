@@ -98,6 +98,8 @@ REQUIREMENTS: List[Tuple[str, str, str, List[str]]] = [
      ["test_challenge.py"]),
     ("R31", "Starts from a fresh clone with one command; /health ready within a bounded time; Python 3.9-3.14",
      "Brief §4 ('runs from a fresh clone')", ["test_startup.py"]),
+    ("R32", "Correct under concurrent requests; capacity and breaking point measured (TESTING §6)", "Design",
+     ["test_concurrency.py"]),
 ]
 
 # ---------------------------------------------------------------------- catalogue
@@ -204,6 +206,8 @@ CATALOGUE: List[Tuple[str, str, str, str, str, str, str]] = [
     ("TC-142", "R31", "Negative (DEF-17)", "No listener: bounded wait", "launcher never binds, 3 s deadline", "fails in < 20 s with process and port diagnostics", "tests/test_startup.py::test_launcher_that_never_listens_fails_at_the_deadline_with_diagnostics"),
     ("TC-143", "R07", "Contract", "Health body must be exact", "{\"status\":\"starting\"}", "not ready", "tests/test_startup.py::test_health_contract_is_exact[200-{\"status\":\"starting\"}-False]"),
     ("TC-144", "R31", "Regression (DEF-15)", "Pins have Python 3.14 wheels", "requirements.txt", "pydantic >= 2.12", "tests/test_startup.py::test_requirements_have_wheels_for_supported_pythons"),
+    ("TC-145", "R32", "Concurrency", "Parallel /decide = sequential", "49 fixture cases x 5, 16 threads", "every answer identical to the sequential one", "tests/test_concurrency.py::test_parallel_requests_get_the_same_answers_as_sequential[False]"),
+    ("TC-146", "R32", "Concurrency", "Parallel /decide?explain=true = sequential", "49 fixture cases x 5, 16 threads, with trace", "every answer and trace identical", "tests/test_concurrency.py::test_parallel_requests_get_the_same_answers_as_sequential[True]"),
 ]
 
 START = "<!-- GENERATED:{name}:START -->"
