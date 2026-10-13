@@ -193,7 +193,7 @@ Unfamiliar wording → no topics → **never** a contradiction. This is what sto
 
 `conftest.py` patches `socket.connect` and `getaddrinfo` to raise, so any network use fails the run.
 
-Browser tests in `e2e/` (Playwright) drive the real page in Chromium, Firefox and WebKit on Linux, macOS and Windows in CI. They check keyboard use, focus, layout, an axe-core audit and screen-reader names. I ran the screen-reader checklist manually with VoiceOver and Chrome on 13 October 2026, and all 6 checks passed (TESTING.md §3b). NVDA, JAWS and Safari were not tested.
+Browser tests in `e2e/` (Playwright) drive the real page in Chromium, Firefox and WebKit on Linux, macOS and Windows in CI. They check keyboard use, focus, layout, an axe-core audit and screen-reader names. A real screen-reader session (VoiceOver or NVDA) has not been run; the manual checklist in TESTING.md §3b is recorded as NOT RUN.
 
 For the tester-style view (test plan, requirements traceability, the 84-case catalogue, defect log, latest results), see [TESTING.md](TESTING.md). It is regenerated from a real run by `scripts/test_report.py`. CI runs everything on Python 3.9 and 3.12 and does a fresh-clone `./run.sh` start check.
 

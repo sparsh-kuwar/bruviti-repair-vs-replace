@@ -17,7 +17,7 @@ The script fails if any test fails, or if a catalogue row points at a test that 
 | **Item under test** | The repair/replace decision service: `POST /decide`, `GET /health`, the page at `/`, and the start command `./run.sh` |
 | **Basis** | The assignment brief (§3 API contract, §4 rules, Appendices D–F) and the interpretations recorded in NOTES.md |
 | **In scope** | API contract; rules D0–D6 and their precedence; input validation and tolerance; text heuristics (hazards, negation, contradictions); missing-field behaviour; determinism; latency; offline operation; fresh-clone start-up; UI smoke and layout |
-| **Out of scope** | Accuracy on real appliance tickets (no real data available); load/soak testing beyond a latency bound; security penetration testing; mobile-device browsers (responsive widths are tested in desktop engines, not on physical phones); automated screen-reader runs (screen readers are covered by automated accessibility checks plus a manual VoiceOver + Chrome run, §3b; NVDA, JAWS, Safari and mobile readers were not tested) |
+| **Out of scope** | Accuracy on real appliance tickets (no real data available); load/soak testing beyond a latency bound; security penetration testing; mobile-device browsers (responsive widths are tested in desktop engines, not on physical phones); a real screen-reader session (automated accessibility checks run in CI; the manual VoiceOver/NVDA checklist in §3b is NOT RUN) |
 | **Levels** | Unit (cost, rules, text) → integration (HTTP via FastAPI `TestClient`, in-process) → system (fresh clone + `./run.sh` / `run.ps1` + real HTTP, in CI) → end-to-end UI in real browsers (`e2e/`, Playwright) → data-driven acceptance (synthetic corpus, hand-labelled fixtures, challenge set) |
 | **Techniques** | Equivalence partitioning; boundary-value analysis at every threshold (just below / at / just above); decision tables for warranty × rule × missing input; precedence tests; negative and invalid-input testing; false-friend tests for text ("shock absorber", "fireplace", "current bill"); exploratory testing turned into regression tests; oracle tests against the brief's three examples |
 | **Oracles** | The brief's worked examples and rule text; labels fixed *before* running the engine for hand-labelled and challenge cases; scenario-by-construction labels for the synthetic corpus (not produced by the engine) |
@@ -186,32 +186,20 @@ The UI is not scored by the brief, but it is tested. The checks below are now **
 
 ### 3b. Screen readers (manual)
 
-Automated checks (UI-10, UI-11) cover the information a screen reader reads from the page: names, roles, states and live regions. They cannot prove what a particular screen reader actually *says*, and driving VoiceOver or NVDA cannot be automated reliably, so this check is run by hand.
+Automated checks (UI-10, UI-11) cover the information a screen reader reads from the page: names, roles, states and live regions. They cannot prove what a particular screen reader actually *says*, and driving VoiceOver or NVDA cannot be automated reliably, so this check must be run by hand.
 
-**Manual run: 13 October 2026, by the author.**
-- **Reader and browser:** VoiceOver on macOS, Google Chrome, against the local server.
-- **Versions:** the report did not include them. This machine had macOS 26.5.1 and Chrome 151.0.7922.138 when the result was recorded.
-- **Result:** 6/6 passed. The observations below are as reported.
+**Status: NOT RUN (pending).** No real screen-reader session has been recorded. This manual check is tracked separately from the automated results and does not affect CI.
 
-| ID | Steps | Expected | Result | Observation (as reported) |
-|---|---|---|---|---|
-| SR-01 | Open `/`, press Tab twice from the top | "Skip to case intake, link", then "Skip to recommendation, link" | Pass | Both skip links are announced during keyboard navigation and can be activated. |
-| SR-02 | Tab to the Case ID field | "Case ID, required, edit text" (wording varies by reader) | Pass | VoiceOver announces the Case ID label, required status, and editable text field. |
-| SR-03 | Leave Case ID blank and press Ctrl+Enter | Error summary read out ("Check these fields before continuing…"), focus on it | Pass | Submitting an empty Case ID announces the validation error. Focus moves to the appropriate error or input location. |
-| SR-04 | Load sample C-2001, press Ctrl+Enter | Status "Recommendation ready for C-2001: repair." announced; focus on the "Recommendation" heading | Pass | Loading case C-2001 announces the recommendation-ready status, and the Recommendation heading can be reached using keyboard navigation. |
-| SR-05 | Read the result with the reading keys (VO+Right / Down arrow) | Action, rule, reason, cost and comparison, decision-path states in words | Pass | The action, rule, reason, estimated cost, and path information are understandable when navigating the result. |
-| SR-06 | Open "All policy checks" with Enter | Each check read with "not triggered", "triggered" or "could not be evaluated" | Pass | Each policy check and its associated state are announced in a comprehensible order. |
+| ID | Steps (VoiceOver on macOS: Cmd+F5; NVDA on Windows) | Expected | Result |
+|---|---|---|---|
+| SR-01 | Open `/`, press Tab twice from the top | "Skip to case intake, link", then "Skip to recommendation, link" | NOT RUN |
+| SR-02 | Tab to the Case ID field | "Case ID, required, edit text" (wording varies by reader) | NOT RUN |
+| SR-03 | Leave Case ID blank and press Ctrl+Enter | Error summary read out ("Check these fields before continuing…"), focus on it | NOT RUN |
+| SR-04 | Load sample C-2001, press Ctrl+Enter | Status "Recommendation ready for C-2001: repair." announced; focus on the "Recommendation" heading | NOT RUN |
+| SR-05 | Read the result with the reading keys (VO+Right / Down arrow) | Action, rule, reason, cost and comparison, decision-path states in words | NOT RUN |
+| SR-06 | Open "All policy checks" with Enter | Each check read with "not triggered", "triggered" or "could not be evaluated" | NOT RUN |
 
-Additional observations reported: none.
-
-**Where automation pins down what the manual notes leave open.** The SR-03 and SR-04 notes are less specific than the expected results about *where* focus lands. The browser suite checks that exactly, in all three engines:
-- After a failed submit, focus is on the error summary (`test_client_side_validation`).
-- After a decision, focus moves to the Recommendation heading (`test_keyboard_only_decision`).
-
-**Not covered:**
-- NVDA or JAWS on Windows.
-- VoiceOver with Safari, which can differ from VoiceOver with Chrome.
-- iOS or Android screen readers.
+When it is run, record the reader, the browser, their versions, the date and what was actually announced for each step.
 
 ## 4. Defect log
 
@@ -245,9 +233,9 @@ Open defects: none known. Known limitations, which are not defects, are listed i
 ## 5. Latest run (unit and integration suite)
 
 <!-- GENERATED:LATEST-RUN:START -->
-- **Run at:** 2026-10-13 10:31 UTC
+- **Run at:** 2026-10-13 10:35 UTC
 - **Environment:** Python 3.13.7 on Darwin arm64; FastAPI 0.128.8, Pydantic 2.13.5; network blocked by `tests/conftest.py`
-- **Result:** ✅ PASS: 308 passed, 0 failed, 0 skipped, 308 total, 5.5 s
+- **Result:** ✅ PASS: 308 passed, 0 failed, 0 skipped, 308 total, 5.4 s
 
 | Test file | Tests | Passed | Failed | Time (s) |
 |---|---|---|---|---|
@@ -257,8 +245,8 @@ Open defects: none known. Known limitations, which are not defects, are listed i
 | `tests/test_cost.py` | 13 | 13 | 0 | 0.00 |
 | `tests/test_escalation.py` | 24 | 24 | 0 | 0.03 |
 | `tests/test_examples.py` | 6 | 6 | 0 | 0.01 |
-| `tests/test_rules.py` | 60 | 60 | 0 | 0.03 |
-| `tests/test_startup.py` | 11 | 11 | 0 | 4.50 |
+| `tests/test_rules.py` | 60 | 60 | 0 | 0.02 |
+| `tests/test_startup.py` | 11 | 11 | 0 | 4.48 |
 | `tests/test_text.py` | 104 | 104 | 0 | 0.04 |
 
 Metric self-checks on our own data (the brief's metrics; **not** evidence of hidden-set accuracy):
@@ -273,7 +261,7 @@ Metric self-checks on our own data (the brief's metrics; **not** evidence of hid
 ## 5b. Latest browser run (end-to-end)
 
 <!-- GENERATED:E2E:START -->
-- **Run at:** 2026-10-13 10:31 UTC on Darwin arm64, Playwright 1.55.0, axe-core via axe-playwright-python 0.1.8
+- **Run at:** 2026-10-13 10:35 UTC on Darwin arm64, Playwright 1.55.0, axe-core via axe-playwright-python 0.1.8
 - **Result:** ✅ PASS: chromium 22/22, firefox 22/22, webkit 22/22
 
 | Browser test | Chromium | Firefox | WebKit |
