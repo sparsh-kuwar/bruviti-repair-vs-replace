@@ -77,7 +77,9 @@ flowchart TD
 | | `_warranty_branches` | D4: returns one branch, or two when the age is missing. |
 | | `_ratio_exceeds`, `_age_within_life` | Three-valued tests (True / False / None = unknown) that also record near-threshold notes. |
 | | `_confidence` | The heuristic in one function. |
+| | `_escalation_check_summary`, `_stages` | Display-only trace for the UI: the outcome of all four D5 checks, and the D5 → D3 → D4 → D1/D2 path with the stage where the case stopped. They never affect the decision. |
 | | `_pct` | Percent formatting: shows one decimal near a threshold so "60.4%" never prints as "60%". |
+| `app/static/app.js` | `renderResult`, `caseNote`, `checkHealth` | Renders the recommendation from the API response only. "Copy case note" produces a ticket-ready summary, the status pill polls the real `/health`, and the panel warns when inputs change after a decision. |
 | `scripts/generate_cases.py` | `generate` | Seeded synthetic scenarios with labels assigned by construction. |
 | `scripts/evaluate.py` | `evaluate`, `macro_f1` | The brief's two metrics plus a list of misses. |
 
@@ -226,5 +228,7 @@ Unfamiliar wording → no topics → **never** a contradiction. This is what sto
 **Why does `?explain=true` exist instead of adding fields to the response?** The contract lists exactly five fields; the graders' parser may be strict. The trace is opt-in, for the UI and for audits.
 
 **How did you handle misspellings and Hinglish?** With explicit whole-word and phrase lists applied before detection, not fuzzy matching or an LLM, so every rewrite is explainable and tested next to near-miss negatives ("sparkling", "current bill", "current nahi lag raha"). I added them after a 14-case challenge missed "sparkes" and "current lag raha hai". I kept that challenge's labels unchanged.
+
+**Why does the UI look like an agent workspace and not a chatbot?** The user is a service agent closing a ticket. They need the recommended action, the rule behind it, what was checked, and a note to paste into the case record. A chat box would hide the evidence and suggest an LLM that isn't there. Every number on the page comes from the API response: no sample queues, no invented statistics, no third-party branding.
 
 **What happens if the engine itself crashes?** The handler catches it and returns `escalate` with confidence 0.3 and a "manual review" reason. A valid case never gets a 500.

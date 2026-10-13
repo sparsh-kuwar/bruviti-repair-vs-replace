@@ -3,38 +3,61 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Repair or Replace</title>
+  <title>Service Decision Desk</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-  <a class="skip" href="#case-form">Skip to case form</a>
-  <header class="topbar">
-    <div class="wrap">
-      <h1>Repair or Replace</h1>
-      <p class="sub">Applies the service policy (rules D0–D6) to one case. Runs entirely on this machine.</p>
+  <a class="skip" href="#case-form">Skip to case intake</a>
+
+  <header class="appbar">
+    <div class="appbar-inner">
+      <div class="brand">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>
+        <div>
+          <span class="brand-name">Service Decision Desk</span>
+          <span class="brand-sub">Repair / replace policy D0–D6</span>
+        </div>
+      </div>
+      <div class="appbar-status">
+        <span id="engine-status" class="pill pill-wait" role="status" aria-live="polite">Checking engine…</span>
+        <span class="pill pill-plain" title="No data leaves this machine; no external calls are made.">Runs locally</span>
+      </div>
     </div>
   </header>
 
-  <main class="wrap layout">
-    <form id="case-form" novalidate aria-describedby="form-help">
-      <p id="form-help" class="help">Leave a field blank if it is not known; blank is sent as <code>null</code>, which is different from 0.</p>
+  <section class="casebar" aria-label="Current case summary">
+    <div class="casebar-inner" id="casebar">
+      <span class="cb-item"><span class="cb-k">Case</span><span class="cb-v" data-cb="case_id">—</span></span>
+      <span class="cb-item"><span class="cb-k">Product</span><span class="cb-v" data-cb="product_category">—</span></span>
+      <span class="cb-item"><span class="cb-k">Age</span><span class="cb-v" data-cb="product_age_months">—</span></span>
+      <span class="cb-item"><span class="cb-k">Warranty</span><span class="cb-v" data-cb="warranty_status">—</span></span>
+      <span class="cb-item"><span class="cb-k">Fault</span><span class="cb-v" data-cb="fault_category">—</span></span>
+    </div>
+  </section>
 
-      <div class="toolbar" role="group" aria-label="Examples and form actions">
-        <span class="toolbar-label">Load example:</span>
-        <button type="button" class="btn ghost" data-example="C-2001">C-2001 · repair</button>
-        <button type="button" class="btn ghost" data-example="C-2002">C-2002 · replace</button>
-        <button type="button" class="btn ghost" data-example="C-2003">C-2003 · escalate</button>
-        <button type="button" class="btn ghost" id="clear-btn">Clear form</button>
+  <main class="workspace">
+    <!-- ============================================================ intake -->
+    <form id="case-form" class="intake" novalidate aria-labelledby="intake-title">
+      <div class="panel-head">
+        <h1 id="intake-title">Case intake</h1>
+        <div class="toolbar" role="group" aria-label="Sample cases and form actions">
+          <span class="toolbar-label">Sample cases</span>
+          <button type="button" class="btn ghost sm" data-example="C-2001">C-2001</button>
+          <button type="button" class="btn ghost sm" data-example="C-2002">C-2002</button>
+          <button type="button" class="btn ghost sm" data-example="C-2003">C-2003</button>
+          <button type="button" class="btn ghost sm" id="clear-btn">Clear</button>
+        </div>
       </div>
+      <p id="form-help" class="help">Leave a field blank if it is unknown. Blank is sent as <code>null</code>, which is not the same as 0.</p>
 
       <div id="error-summary" class="error-summary" role="alert" tabindex="-1" hidden>
-        <h2>Fix these fields</h2>
+        <h2>Check these fields</h2>
         <ul></ul>
       </div>
 
-      <fieldset>
-        <legend>Case and product</legend>
+      <fieldset class="card">
+        <legend><span class="step">1</span>Customer and product</legend>
         <div class="grid">
           <div class="field">
             <label for="case_id">Case ID <span class="req">required</span></label>
@@ -56,25 +79,12 @@
             <input id="product_age_months" name="product_age_months" type="number" min="0" step="1" inputmode="numeric" data-kind="int" aria-describedby="err-product_age_months">
             <p class="err" id="err-product_age_months"></p>
           </div>
-          <div class="field">
-            <label for="warranty_status">Warranty status</label>
-            <select id="warranty_status" name="warranty_status" aria-describedby="err-warranty_status">
-              <option>in_warranty</option><option>extended</option><option>out_of_warranty</option>
-              <option selected>unknown</option>
-            </select>
-            <p class="err" id="err-warranty_status"></p>
-          </div>
-          <div class="field">
-            <label for="purchase_price">Purchase price</label>
-            <input id="purchase_price" name="purchase_price" type="number" min="0" step="any" inputmode="decimal" data-kind="num" aria-describedby="hint-purchase err-purchase_price">
-            <p class="hint" id="hint-purchase">Recorded only; no rule uses it.</p>
-            <p class="err" id="err-purchase_price"></p>
-          </div>
-          <div class="field">
-            <label for="replacement_price">Replacement price</label>
-            <input id="replacement_price" name="replacement_price" type="number" min="0" step="any" inputmode="decimal" data-kind="num" aria-describedby="err-replacement_price">
-            <p class="err" id="err-replacement_price"></p>
-          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend><span class="step">2</span>Reported fault</legend>
+        <div class="grid">
           <div class="field">
             <label for="fault_category">Fault category</label>
             <select id="fault_category" name="fault_category" aria-describedby="err-fault_category">
@@ -87,11 +97,43 @@
             </select>
             <p class="err" id="err-fault_category"></p>
           </div>
+          <div class="field span">
+            <label for="symptom_text">Symptom text (from the ticket)</label>
+            <textarea id="symptom_text" name="symptom_text" rows="3" aria-describedby="hint-symptom err-symptom_text"></textarea>
+            <p class="hint" id="hint-symptom">Checked for safety hazards and for conflicts with the fields above.</p>
+            <p class="err" id="err-symptom_text"></p>
+          </div>
         </div>
       </fieldset>
 
-      <fieldset>
-        <legend>Parts</legend>
+      <fieldset class="card">
+        <legend><span class="step">3</span>Entitlement and pricing</legend>
+        <div class="grid">
+          <div class="field">
+            <label for="warranty_status">Warranty status</label>
+            <select id="warranty_status" name="warranty_status" aria-describedby="err-warranty_status">
+              <option>in_warranty</option><option>extended</option><option>out_of_warranty</option>
+              <option selected>unknown</option>
+            </select>
+            <p class="err" id="err-warranty_status"></p>
+          </div>
+          <div class="field">
+            <label for="replacement_price">Replacement price</label>
+            <input id="replacement_price" name="replacement_price" type="number" min="0" step="any" inputmode="decimal" data-kind="num" aria-describedby="hint-repl err-replacement_price">
+            <p class="hint" id="hint-repl">Current price of the equivalent model.</p>
+            <p class="err" id="err-replacement_price"></p>
+          </div>
+          <div class="field">
+            <label for="purchase_price">Purchase price</label>
+            <input id="purchase_price" name="purchase_price" type="number" min="0" step="any" inputmode="decimal" data-kind="num" aria-describedby="hint-purchase err-purchase_price">
+            <p class="hint" id="hint-purchase">Recorded only; no rule uses it.</p>
+            <p class="err" id="err-purchase_price"></p>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend><span class="step">4</span>Parts required</legend>
         <p class="help">Every listed part is treated as required for the repair.</p>
         <div class="parts-wrap">
           <table class="parts" aria-describedby="err-parts">
@@ -101,12 +143,13 @@
             <tbody id="parts-body"></tbody>
           </table>
         </div>
+        <p class="empty-parts" id="empty-parts">No parts listed. The cost will be labour and travel only.</p>
         <p class="err" id="err-parts"></p>
-        <button type="button" class="btn ghost" id="add-part">+ Add part</button>
+        <button type="button" class="btn ghost sm" id="add-part">+ Add part</button>
       </fieldset>
 
-      <fieldset>
-        <legend>Labour and travel</legend>
+      <fieldset class="card">
+        <legend><span class="step">5</span>Labour and travel</legend>
         <div class="grid">
           <div class="field">
             <label for="labour_hours">Labour hours</label>
@@ -126,8 +169,8 @@
         </div>
       </fieldset>
 
-      <fieldset>
-        <legend>History and symptom</legend>
+      <fieldset class="card">
+        <legend><span class="step">6</span>Service history</legend>
         <div class="grid">
           <div class="field">
             <label for="prior_repairs_12m">Repairs in last 12 months</label>
@@ -142,27 +185,31 @@
             </select>
             <p class="err" id="err-customer_sentiment"></p>
           </div>
-          <div class="field span">
-            <label for="symptom_text">Symptom text</label>
-            <textarea id="symptom_text" name="symptom_text" rows="3" aria-describedby="err-symptom_text"></textarea>
-            <p class="err" id="err-symptom_text"></p>
-          </div>
         </div>
       </fieldset>
 
       <div class="actions">
-        <button type="submit" class="btn primary" id="decide-btn">Decide</button>
+        <button type="submit" class="btn primary" id="decide-btn">Get recommendation</button>
+        <span class="kbd-hint">or press <kbd>Ctrl</kbd> + <kbd>Enter</kbd></span>
         <span id="status" class="status" aria-live="polite"></span>
       </div>
     </form>
 
-    <section class="result" aria-labelledby="result-title">
-      <h2 id="result-title">Result</h2>
-      <div id="result" aria-live="polite">
-        <p class="empty">Fill in a case or load an example, then choose <strong>Decide</strong>.</p>
+    <!-- ============================================================ recommendation -->
+    <section class="assist" aria-labelledby="assist-title">
+      <div class="panel-head">
+        <h2 id="assist-title">Recommendation</h2>
       </div>
+      <div id="stale" class="stale" hidden role="status">
+        Inputs changed since this recommendation. <button type="button" class="linkbtn" id="redo-btn">Run again</button>
+      </div>
+      <div id="result" aria-live="polite"></div>
     </section>
   </main>
+
+  <footer class="foot">
+    Deterministic policy engine. Decisions follow rules D0–D6; confidence is a rule-based heuristic, not a probability.
+  </footer>
 
   <template id="part-row">
     <tr>

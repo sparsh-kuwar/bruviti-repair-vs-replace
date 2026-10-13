@@ -25,8 +25,8 @@ Once the service is ready:
 |---|---|
 | `GET /health` | `200 {"status": "ok"}` |
 | `POST /decide` | one case in, one decision out (contract below) |
-| `POST /decide?explain=true` | same, plus a `trace` of every check the engine ran (the UI uses this) |
-| `GET /` | single-page form: enter a case or load one of the three brief examples, then press Decide |
+| `POST /decide?explain=true` | same, plus a `trace`: every check the engine ran, the D5 escalation checks, and the precedence stages showing where the case stopped (the UI uses this) |
+| `GET /` | single-page agent workspace: case intake on the left, recommendation on the right (decision, cost, confidence, decision path, policy checks, cost breakdown, copyable case note) |
 
 ## Run the tests
 

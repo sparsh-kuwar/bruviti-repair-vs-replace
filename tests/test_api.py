@@ -191,3 +191,28 @@ def test_oow_abbreviation_gives_same_decision_as_full_value(client):
 @pytest.mark.parametrize("raw", ["OOWX", "O O W", "W", "oo", "XW"])
 def test_unknown_abbreviations_stay_invalid(client, raw):
     assert client.post("/decide", json=case(warranty_status=raw)).status_code == 422
+
+
+# ------------------------------------------------------------------ UI trace fields
+
+
+@pytest.mark.parametrize("data,stopped_rule,skipped", [
+    (case(), "D2", 0),                                                     # plain D2 repair
+    (case(symptom_text="smoke from the back"), "D5", 3),                   # escalation stops first
+    (case(warranty_status="in_warranty", technician_travel_minutes=200,
+          parts=[{"sku": "P", "price": 20000, "lead_time_days": 2}]), "D3", 2),
+])
+def test_trace_stages_show_where_precedence_stopped(client, data, stopped_rule, skipped):
+    trace = client.post("/decide?explain=true", json=data).json()["trace"]
+    stages = trace["stages"]
+    assert [s["status"] for s in stages].count("stopped") == 1
+    assert next(s for s in stages if s["status"] == "stopped")["rule"] == stopped_rule
+    assert [s["status"] for s in stages].count("skipped") == skipped
+
+
+def test_trace_lists_every_escalation_check(client):
+    trace = client.post("/decide?explain=true", json=case(prior_repairs_12m=2, customer_sentiment="negative")).json()["trace"]
+    checks = {c["check"]: c["triggered"] for c in trace["escalation_checks"]}
+    assert len(checks) == 4
+    assert checks["Repeat repairs with negative sentiment"] is True
+    assert checks["Safety hazard in symptom text"] is False
