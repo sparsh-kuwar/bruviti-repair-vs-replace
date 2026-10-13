@@ -3,6 +3,11 @@
 ``block_network`` replaces socket connect/DNS calls for the whole session, so a
 test that accidentally (or a library that silently) reaches the network fails
 loudly. FastAPI's TestClient talks to the app in-process and needs no socket.
+
+Loopback (127.0.0.1, ::1, localhost) stays allowed: on Windows, Python's event
+loop builds its internal self-pipe with a socketpair that connects to
+127.0.0.1, and the startup tests talk to a server on this machine. Nothing
+outside the machine is reachable.
 """
 
 from __future__ import annotations
@@ -23,17 +28,42 @@ class NetworkBlocked(RuntimeError):
     pass
 
 
-def _blocked(*args: Any, **kwargs: Any):
-    raise NetworkBlocked("network access attempted during tests")
+LOOPBACK = {"127.0.0.1", "::1", "localhost", "0:0:0:0:0:0:0:1"}
+_real_connect = socket.socket.connect
+_real_connect_ex = socket.socket.connect_ex
+_real_create_connection = socket.create_connection
+_real_getaddrinfo = socket.getaddrinfo
+
+
+def _is_local(address: Any) -> bool:
+    if isinstance(address, (str, bytes)):  # AF_UNIX path: local by definition
+        return True
+    host = address[0] if isinstance(address, tuple) and address else None
+    return host in LOOPBACK
+
+
+def _guard(real):
+    def wrapper(self_or_addr, *args: Any, **kwargs: Any):
+        address = args[0] if real in (_real_connect, _real_connect_ex) else self_or_addr
+        if not _is_local(address):
+            raise NetworkBlocked(f"network access attempted during tests: {address!r}")
+        return real(self_or_addr, *args, **kwargs)
+    return wrapper
+
+
+def _guarded_getaddrinfo(host: Any, *args: Any, **kwargs: Any):
+    if host not in LOOPBACK and host is not None:
+        raise NetworkBlocked(f"DNS lookup attempted during tests: {host!r}")
+    return _real_getaddrinfo(host, *args, **kwargs)
 
 
 @pytest.fixture(autouse=True, scope="session")
 def block_network():
     mp = pytest.MonkeyPatch()
-    mp.setattr(socket.socket, "connect", _blocked)
-    mp.setattr(socket.socket, "connect_ex", _blocked)
-    mp.setattr(socket, "create_connection", _blocked)
-    mp.setattr(socket, "getaddrinfo", _blocked)
+    mp.setattr(socket.socket, "connect", _guard(_real_connect))
+    mp.setattr(socket.socket, "connect_ex", _guard(_real_connect_ex))
+    mp.setattr(socket, "create_connection", _guard(_real_create_connection))
+    mp.setattr(socket, "getaddrinfo", _guarded_getaddrinfo)
     yield
     mp.undo()
 

@@ -4,9 +4,11 @@
 $ErrorActionPreference = "Stop"
 Set-Location -Path $PSScriptRoot
 
+# Prefer the python on PATH (what the user or CI set up). The "py" launcher comes
+# last because it picks the newest installed Python, not necessarily that one.
 $py = $env:PYTHON
 if (-not $py) {
-    foreach ($candidate in @("py", "python", "python3")) {
+    foreach ($candidate in @("python", "python3", "py")) {
         if (Get-Command $candidate -ErrorAction SilentlyContinue) {
             & $candidate -c "import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)" 2>$null
             if ($LASTEXITCODE -eq 0) { $py = $candidate; break }

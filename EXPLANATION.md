@@ -237,4 +237,10 @@ For the tester-style view (test plan, requirements traceability, the 84-case cat
 
 **Why does the UI look like an agent workspace and not a chatbot?** The user is a service agent closing a ticket. They need the recommended action, the rule behind it, what was checked, and a note to paste into the case record. A chat box would hide the evidence and suggest an LLM that isn't there. Every number on the page comes from the API response: no sample queues, no invented statistics, no third-party branding.
 
+**What was the hardest bug?** The Windows start-up check in CI never became healthy. I diagnosed it on a real Windows runner with a probe workflow and found two causes:
+1. GitHub's Windows runners kill every process a step started when that step ends. A control `Start-Sleep` process died too, so the server started in its own step could never be reached from the next one.
+2. `run.ps1` used the `py` launcher, which picked Python 3.14, and my pinned pydantic 2.10 had no 3.14 wheel, so pip tried to compile Rust and failed.
+
+The second one would have broken `./run.sh` for anyone on Python 3.14, on any OS. The fixes: one-process start-and-check (`scripts/smoke_start.py`) with a 60 s bound and real diagnostics, pins with cp39–cp314 wheels, and Python 3.14 in CI.
+
 **What happens if the engine itself crashes?** The handler catches it and returns `escalate` with confidence 0.3 and a "manual review" reason. A valid case never gets a 500.

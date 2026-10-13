@@ -1,7 +1,9 @@
-# Runtime
-fastapi==0.115.6
-pydantic==2.10.4
-uvicorn==0.34.0
+# Runtime. Pins chosen so one set installs from prebuilt wheels on Python 3.9-3.14
+# (Windows, macOS, Linux); pydantic-core 2.46.5 ships cp39..cp314 wheels, so no
+# Rust compiler is ever needed. (pydantic 2.10 failed on Python 3.14: no wheel.)
+fastapi==0.128.8
+pydantic==2.13.5
+uvicorn==0.39.0
 # Tests (FastAPI's TestClient needs httpx)
-pytest==8.3.4
+pytest==8.4.2
 httpx==0.28.1

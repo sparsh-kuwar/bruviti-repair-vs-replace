@@ -96,6 +96,8 @@ REQUIREMENTS: List[Tuple[str, str, str, List[str]]] = [
      ["test_escalation.py::test_normal_cases", "test_escalation.py::test_unfamiliar", "test_corpora.py"]),
     ("R30", "Behaviour on unseen styles of data (challenge set)", "Brief §4 ('will not look like yours')",
      ["test_challenge.py"]),
+    ("R31", "Starts from a fresh clone with one command; /health ready within a bounded time; Python 3.9-3.14",
+     "Brief §4 ('runs from a fresh clone')", ["test_startup.py"]),
 ]
 
 # ---------------------------------------------------------------------- catalogue
@@ -196,6 +198,12 @@ CATALOGUE: List[Tuple[str, str, str, str, str, str, str]] = [
     ("TC-131", "R30", "Data-driven", "Hand-labelled adversarial set", "35 cases", "0 misses", "tests/test_corpora.py::test_handwritten_fixtures"),
     ("TC-132", "R30", "Exploratory -> regression", "Challenge: Hinglish shock", "'body mein current lag raha hai'", "escalate", "tests/test_challenge.py::test_challenge_case[Hinglish 'current lag raha']"),
     ("TC-133", "R30", "Exploratory -> regression", "Challenge: OOW", "warranty 'OOW'", "repair", "tests/test_challenge.py::test_challenge_case[unusual enum 'OOW']"),
+    # start-up
+    ("TC-140", "R31", "System", "Real server start passes the grader check", "uvicorn child process + smoke check", "healthy, / served, 3 examples match", "tests/test_startup.py::test_server_stays_up_and_passes_the_grader_check"),
+    ("TC-141", "R31", "Negative (DEF-16)", "Launcher crash fails fast", "launcher exits with code 3", "fails in < 20 s with exit code and output", "tests/test_startup.py::test_launcher_that_exits_fails_fast_with_its_output"),
+    ("TC-142", "R31", "Negative (DEF-17)", "No listener: bounded wait", "launcher never binds, 3 s deadline", "fails in < 20 s with process and port diagnostics", "tests/test_startup.py::test_launcher_that_never_listens_fails_at_the_deadline_with_diagnostics"),
+    ("TC-143", "R07", "Contract", "Health body must be exact", "{\"status\":\"starting\"}", "not ready", "tests/test_startup.py::test_health_contract_is_exact[200-{\"status\":\"starting\"}-False]"),
+    ("TC-144", "R31", "Regression (DEF-15)", "Pins have Python 3.14 wheels", "requirements.txt", "pydantic >= 2.12", "tests/test_startup.py::test_requirements_have_wheels_for_supported_pythons"),
 ]
 
 START = "<!-- GENERATED:{name}:START -->"
@@ -354,6 +362,10 @@ def replace_section(text: str, name: str, body: str) -> str:
 
 
 def main() -> int:
+    # Windows consoles default to cp1252, which cannot print the status marks.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     ap.add_argument("--junit", type=Path, help="existing JUnit XML (skip running pytest)")
     ap.add_argument("--summary", action="store_true", help="print a Markdown summary instead of editing TESTING.md")

@@ -240,3 +240,25 @@ def test_cost_formula_exposes_every_component(client):
     f = client.post("/decide?explain=true", json=case()).json()["trace"]["cost_formula"]
     assert (f["parts_total"], f["labour"], f["travel"], f["total"]) == (6200.0, 1350.0, 600.0, 8150.0)
     assert f["labour_hours"] == 1.5 and f["labour_rate_per_hour"] == 900 and f["technician_travel_minutes"] == 40
+
+
+# ------------------------------------------------------------------ the network guard itself
+
+
+def test_network_guard_blocks_external_hosts_but_allows_loopback():
+    import socket as _socket
+    from tests.conftest import NetworkBlocked
+    with pytest.raises(NetworkBlocked):
+        _socket.getaddrinfo("example.com", 80)
+    with pytest.raises(NetworkBlocked):
+        _socket.create_connection(("93.184.216.34", 80), timeout=1)
+    # Loopback is allowed (Windows event loops need it): the call reaches the OS
+    # and returns an errno for the closed port instead of raising NetworkBlocked.
+    s = _socket.socket()
+    try:
+        s.settimeout(1)
+        assert isinstance(s.connect_ex(("127.0.0.1", 9)), int)
+    finally:
+        s.close()
+    a, b = _socket.socketpair()  # what asyncio's Windows event loop does at start-up
+    a.close(), b.close()

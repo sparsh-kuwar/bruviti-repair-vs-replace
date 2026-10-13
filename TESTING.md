@@ -21,7 +21,7 @@ The script fails if any test fails, or if a catalogue row points at a test that 
 | **Levels** | Unit (cost, rules, text) → integration (HTTP via FastAPI `TestClient`, in-process) → system (fresh clone + `./run.sh` / `run.ps1` + real HTTP, in CI) → end-to-end UI in real browsers (`e2e/`, Playwright) → data-driven acceptance (synthetic corpus, hand-labelled fixtures, challenge set) |
 | **Techniques** | Equivalence partitioning; boundary-value analysis at every threshold (just below / at / just above); decision tables for warranty × rule × missing input; precedence tests; negative and invalid-input testing; false-friend tests for text ("shock absorber", "fireplace", "current bill"); exploratory testing turned into regression tests; oracle tests against the brief's three examples |
 | **Oracles** | The brief's worked examples and rule text; labels fixed *before* running the engine for hand-labelled and challenge cases; scenario-by-construction labels for the synthetic corpus (not produced by the engine) |
-| **Environment** | CI: Linux, macOS and Windows × Python 3.9, 3.12, 3.13 for the suite; fresh-clone start on all three OSes (`run.sh` on Linux/macOS, `run.ps1` on Windows); browser tests in Chromium, Firefox and WebKit on all three OSes. Local: macOS, Python 3.13 and 3.11. Pinned dependencies (`requirements.txt`, `requirements-e2e.txt`). Sockets and DNS are patched to raise during the unit suite, so the run proves offline operation; the browser tests fail if the page requests anything not served by the local server |
+| **Environment** | CI: Linux, macOS and Windows × Python 3.9, 3.12, 3.13, 3.14 for the suite; fresh-clone start (`scripts/smoke_start.py`: `run.sh` on Linux/macOS, `run.ps1` on Windows; /health within 60 s) on all three OSes with Python 3.9 and 3.14; browser tests in Chromium, Firefox and WebKit on all three OSes. Local: macOS, Python 3.13 and 3.11. Pinned dependencies (`requirements.txt`, `requirements-e2e.txt`). Sockets and DNS are patched to raise during the unit suite, so the run proves offline operation; the browser tests fail if the page requests anything not served by the local server |
 | **Entry criteria** | Dependencies install from `requirements.txt`; the service starts and `/health` returns ok |
 | **Exit criteria** | 100% of automated tests pass; every requirement in §2 has at least one passing test; the three brief examples match; fresh-clone start-up passes in CI; no open defects of severity High |
 | **Risks** | Hidden test data uses wording and formats we have not seen; the brief is ambiguous on several points (NOTES.md). Both are mitigated by tolerant input handling and documented interpretations, not eliminated |
@@ -39,9 +39,9 @@ Every requirement maps to the automated tests that cover it (matched by test nam
 | R04 | decision is one of repair / replace / escalate | Brief §3 | 9 | ✅ 9/9 | — |
 | R05 | confidence is a number in [0, 1] | Brief §3 | 13 | ✅ 13/13 | — |
 | R06 | reason is one sentence naming the deciding rule | Brief §3 | 4 | ✅ 4/4 | TC-013 |
-| R07 | GET /health returns 200 {"status": "ok"} | Brief §4 | 1 | ✅ 1/1 | TC-001 |
+| R07 | GET /health returns 200 {"status": "ok"} | Brief §4 | 1 | ✅ 1/1 | TC-001, TC-143 |
 | R08 | Single page served at / by the same process; no remote assets | Brief §4–5 | 2 | ✅ 2/2 | TC-002, TC-003 |
-| R09 | Works with the network off; tests run offline | Brief §4–5 | 294 | ✅ 294/294 | — |
+| R09 | Works with the network off; tests run offline | Brief §4–5 | 306 | ✅ 306/306 | — |
 | R10 | Each request answered in under 1 second | Brief §4 | 1 | ✅ 1/1 | TC-007 |
 | R11 | D0 repair-cost formula; null only when it cannot be computed | Appendix D0 | 15 | ✅ 15/15 | TC-020, TC-021, TC-022, TC-023, TC-024, TC-025, TC-026 |
 | R12 | D1a in/extended warranty: replace if cost > 60% of replacement | Appendix D1 | 8 | ✅ 8/8 | TC-030, TC-031, TC-032 |
@@ -63,6 +63,7 @@ Every requirement maps to the automated tests that cover it (matched by test nam
 | R28 | Deterministic: identical input gives identical output | Design | 3 | ✅ 3/3 | TC-008 |
 | R29 | Does not escalate everything | Brief §3 (metric) | 10 | ✅ 10/10 | TC-120, TC-130 |
 | R30 | Behaviour on unseen styles of data (challenge set) | Brief §4 ('will not look like yours') | 14 | ✅ 14/14 | TC-131, TC-132, TC-133 |
+| R31 | Starts from a fresh clone with one command; /health ready within a bounded time; Python 3.9-3.14 | Brief §4 ('runs from a fresh clone') | 11 | ✅ 11/11 | TC-140, TC-141, TC-142, TC-144 |
 <!-- GENERATED:TRACEABILITY:END -->
 
 ## 3. Test-case catalogue
@@ -156,6 +157,11 @@ A selection of representative cases. The full suite has more, mostly parametrise
 | TC-131 | R30 | Data-driven | Hand-labelled adversarial set | 35 cases | 0 misses | as expected | ✅ pass |
 | TC-132 | R30 | Exploratory -> regression | Challenge: Hinglish shock | 'body mein current lag raha hai' | escalate | as expected | ✅ pass |
 | TC-133 | R30 | Exploratory -> regression | Challenge: OOW | warranty 'OOW' | repair | as expected | ✅ pass |
+| TC-140 | R31 | System | Real server start passes the grader check | uvicorn child process + smoke check | healthy, / served, 3 examples match | as expected | ✅ pass |
+| TC-141 | R31 | Negative (DEF-16) | Launcher crash fails fast | launcher exits with code 3 | fails in < 20 s with exit code and output | as expected | ✅ pass |
+| TC-142 | R31 | Negative (DEF-17) | No listener: bounded wait | launcher never binds, 3 s deadline | fails in < 20 s with process and port diagnostics | as expected | ✅ pass |
+| TC-143 | R07 | Contract | Health body must be exact | {"status":"starting"} | not ready | as expected | ✅ pass |
+| TC-144 | R31 | Regression (DEF-15) | Pins have Python 3.14 wheels | requirements.txt | pydantic >= 2.12 | as expected | ✅ pass |
 <!-- GENERATED:CATALOGUE:END -->
 
 ### 3a. UI checks
@@ -212,6 +218,11 @@ Each defect found during development, how it was found, and the regression test 
 | DEF-12 | Medium | axe-core audit, all engines | Raw-response `<pre>` scrolled sideways but could not be reached by keyboard (`scrollable-region-focusable`, serious) | Scrollable element without `tabindex` | `tabindex="0"`, `role="region"` and a label | `test_axe_finds_no_violations` |
 | DEF-13 | High | Code review before adding Windows to CI | Test suite would crash on Windows: page files read without an encoding (cp1252 cannot decode "—", "÷") | `Path.read_text()` uses the locale encoding | Every read and write states UTF-8 | Windows CI job; suite run with `LC_ALL=C` locally |
 | DEF-14 | Medium | Contrast review of my own fix for DEF-11 | The first replacement focus ring was semi-transparent, about 2:1 against white, below 3:1 | `rgba(..., 0.45)` outline | Solid `var(--focus)` outline, 6.27:1 | UI-08 |
+| DEF-15 | **Critical** | Windows CI diagnostic run | `run.ps1` exited with code 1: `Failed building wheel for pydantic-core`. Any machine whose default Python is **3.14** (on any OS) could not install the service | `pydantic==2.10.4` needs `pydantic-core 2.27.x`, which has no Python 3.14 wheel, so pip tried to compile Rust. CI never tested 3.14. On Windows, `py` picked 3.14 | Pins raised to fastapi 0.128.8 / pydantic 2.13.5 (pydantic-core 2.46.5 has cp39–cp314 wheels) / uvicorn 0.39.0 / pytest 8.4.2. `run.ps1` prefers PATH `python` over `py`. Python 3.14 added to CI | TC-144; fresh-start CI on Python 3.9 and 3.14 × 3 OSes |
+| DEF-16 | High | Windows CI diagnostic run (control process) | Windows fresh-start job never became healthy; `server.log`/`server.err` were 0 bytes | GitHub's Windows runners kill every process a step started when the step ends. The server, started in its own 5 s step, was killed while still creating `.venv` (a control `Start-Sleep 900` died too) | `scripts/smoke_start.py` starts the launcher and checks it in one process, so they share a lifetime on every OS | TC-140, TC-141 |
+| DEF-17 | Medium | Windows CI timing | A "240 s" health wait took about 12.5 minutes | Each `curl` to a refused port takes about 2 s on Windows, with no per-request timeout, and `localhost` tried IPv6 first | 2 s per-request timeout, 60 s overall deadline, `127.0.0.1`, diagnostics on failure (process alive, port listening, last error, log tail) | TC-142 |
+| DEF-18 | High | Windows CI | Every Windows unit-test run failed: `'ProactorEventLoop' object has no attribute '_ssock'` | The test network guard blocked all `connect` calls, but Windows' event loop builds its internal socketpair by connecting to 127.0.0.1 | Guard allows loopback only; external hosts and DNS still raise | `test_network_guard_blocks_external_hosts_but_allows_loopback` |
+| DEF-19 | Low | Windows CI | Browser report crashed after 66/66 tests passed: `UnicodeEncodeError` on "✅" | Windows console uses cp1252 | Report reconfigures stdout/stderr to UTF-8 | Windows browser job |
 | DEF-08 | Medium | Code review, before the first test run | Contraction rule would have rewritten "element" as "eleme not" | Regex `n'?t` made the apostrophe optional | Require the apostrophe | `test_normalise_contractions` |
 
 Open defects: none known. Known limitations, which are not defects, are listed in NOTES.md and DATA.md.
@@ -219,19 +230,20 @@ Open defects: none known. Known limitations, which are not defects, are listed i
 ## 5. Latest run (unit and integration suite)
 
 <!-- GENERATED:LATEST-RUN:START -->
-- **Run at:** 2026-10-13 09:20 UTC
-- **Environment:** Python 3.13.7 on Darwin arm64; FastAPI 0.115.6, Pydantic 2.10.4; network blocked by `tests/conftest.py`
-- **Result:** ✅ PASS: 294 passed, 0 failed, 0 skipped, 294 total, 2.8 s
+- **Run at:** 2026-10-13 09:42 UTC
+- **Environment:** Python 3.13.7 on Darwin arm64; FastAPI 0.128.8, Pydantic 2.13.5; network blocked by `tests/conftest.py`
+- **Result:** ✅ PASS: 306 passed, 0 failed, 0 skipped, 306 total, 7.3 s
 
 | Test file | Tests | Passed | Failed | Time (s) |
 |---|---|---|---|---|
-| `tests/test_api.py` | 67 | 67 | 0 | 2.52 |
+| `tests/test_api.py` | 68 | 68 | 0 | 2.52 |
 | `tests/test_challenge.py` | 14 | 14 | 0 | 0.01 |
 | `tests/test_corpora.py` | 8 | 8 | 0 | 0.23 |
 | `tests/test_cost.py` | 13 | 13 | 0 | 0.00 |
 | `tests/test_escalation.py` | 24 | 24 | 0 | 0.03 |
 | `tests/test_examples.py` | 6 | 6 | 0 | 0.01 |
 | `tests/test_rules.py` | 60 | 60 | 0 | 0.02 |
+| `tests/test_startup.py` | 11 | 11 | 0 | 4.53 |
 | `tests/test_text.py` | 102 | 102 | 0 | 0.00 |
 
 Metric self-checks on our own data (the brief's metrics; **not** evidence of hidden-set accuracy):

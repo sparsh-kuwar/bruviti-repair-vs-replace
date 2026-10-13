@@ -6,7 +6,7 @@ Takes one appliance service case and returns **repair**, **replace** or **escala
 
 ## Run it (one command)
 
-Requirements: Python 3.9 or newer, and internet access the first time only (to install dependencies).
+Requirements: Python 3.9 to 3.14, and internet access the first time only (to install dependencies). All pinned dependencies install from prebuilt wheels, so no compiler is needed.
 
 ```sh
 ./run.sh
@@ -15,6 +15,8 @@ Requirements: Python 3.9 or newer, and internet access the first time only (to i
 This creates `.venv/`, installs the pinned dependencies from `requirements.txt`, and starts the API and the UI in one process on **http://localhost:8000**. Running it again reuses the virtualenv. If the `python3` on your PATH is older than 3.9, run `PYTHON=/path/to/python3.11 ./run.sh`.
 
 **Windows (PowerShell):** `.\run.ps1` does the same thing. If scripts are blocked, run `powershell -ExecutionPolicy Bypass -File run.ps1`.
+
+To check a fresh start the way a grader would (start the launcher, wait at most 60 s for `/health`, check `/` and the brief's examples, then stop), run `python scripts/smoke_start.py`.
 
 The equivalent manual steps:
 
@@ -54,8 +56,8 @@ There are 292 tests. They run fully offline: `tests/conftest.py` disables socket
 ```
 
 On every push, CI (GitHub Actions) runs:
-- the suite on Linux, macOS and Windows with Python 3.9, 3.12 and 3.13;
-- a fresh-clone start on all three operating systems (`run.sh`, or `run.ps1` on Windows), waiting for `/health` and checking the three brief examples;
+- the suite on Linux, macOS and Windows with Python 3.9, 3.12, 3.13 and 3.14;
+- a fresh-clone start on all three operating systems with Python 3.9 and 3.14 (`scripts/smoke_start.py` runs `run.sh`, or `run.ps1` on Windows), waiting at most 60 s for `/health` and checking the three brief examples;
 - the browser tests in all three engines on all three operating systems.
 
 Score the engine with the brief's metrics (macro-F1, share of costs within 10%):
@@ -113,7 +115,8 @@ Extra material, not required by the brief:
 | [research/RESEARCH_NOTES.md](research/RESEARCH_NOTES.md) | Design rationale with verified references |
 | `examples/` | The three reference cases from the brief, with expected responses |
 | `scripts/` | Synthetic data generator, metric evaluator, test-report generator |
-| `.github/workflows/ci.yml` | CI: tests on 3 OSes × 3 Python versions, fresh-clone start on 3 OSes, browser tests in 3 engines on 3 OSes |
+| `.github/workflows/ci.yml` | CI: tests on 3 OSes × 4 Python versions, fresh-clone start on 3 OSes × 2 Pythons, browser tests in 3 engines on 3 OSes |
+| `scripts/smoke_start.py` | Fresh-start check: launcher → bounded /health wait → examples, with diagnostics on failure |
 | `e2e/` | Browser tests (Playwright + axe-core) |
 | `run.ps1` | Windows equivalent of `run.sh` |
 
