@@ -1,6 +1,8 @@
-# Runs the offline test suite and a fresh-start check on every push.
-# The fresh-start job does what a grader does: run ./run.sh on a clean machine,
-# wait for /health, and send the brief's three examples.
+# CI on every push:
+#   tests        offline unit/integration suite on Linux, macOS, Windows x Python 3.9/3.12/3.13
+#   fresh-start  what a grader does: one command on a clean machine, wait for /health,
+#                check / and the brief's three examples (run.sh on Linux/macOS, run.ps1 on Windows)
+#   browsers     end-to-end UI tests in Chromium, Firefox and WebKit on Linux, macOS, Windows
 name: CI
 
 on:
@@ -13,13 +15,17 @@ permissions:
 
 jobs:
   tests:
-    name: Tests (Python ${{ matrix.python }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    name: Tests (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.9", "3.12"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.9", "3.12", "3.13"]
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,23 +40,35 @@ jobs:
         run: python scripts/test_report.py --junit junit.xml --summary >> "$GITHUB_STEP_SUMMARY"
 
   fresh-start:
-    name: Fresh clone starts with ./run.sh
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    name: Fresh clone starts (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Start the service with the documented command
+      - name: Start with the documented command (run.sh)
+        if: runner.os != 'Windows'
         run: nohup ./run.sh > server.log 2>&1 &
+      - name: Start with the documented command (run.ps1)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Start-Process -FilePath powershell -ArgumentList '-ExecutionPolicy','Bypass','-File','run.ps1' -RedirectStandardOutput server.log -RedirectStandardError server.err -WindowStyle Hidden
       - name: Wait for /health
         run: |
-          for i in $(seq 1 180); do
+          for i in $(seq 1 240); do
             if curl -sf http://localhost:8000/health | grep -q '"status":"ok"'; then echo "healthy after ${i}s"; exit 0; fi
             sleep 1
           done
-          echo "service did not become healthy"; cat server.log; exit 1
+          echo "service did not become healthy"; cat server.log server.err 2>/dev/null; exit 1
       - name: UI is served at /
         run: curl -sf http://localhost:8000/ | grep -q 'id="case-form"'
       - name: The brief's three examples match
@@ -58,15 +76,41 @@ jobs:
           python - <<'PY'
           import json, urllib.request
           for cid in ("C-2001", "C-2002", "C-2003"):
-              body = open(f"examples/{cid}.request.json").read().encode()
+              body = open(f"examples/{cid}.request.json", encoding="utf-8").read().encode()
               req = urllib.request.Request("http://localhost:8000/decide", data=body,
                                            headers={"content-type": "application/json"})
               got = json.load(urllib.request.urlopen(req, timeout=5))
-              exp = json.load(open(f"examples/{cid}.expected.json"))
+              exp = json.load(open(f"examples/{cid}.expected.json", encoding="utf-8"))
               for key in ("case_id", "decision", "estimated_repair_cost", "confidence"):
                   assert got[key] == exp[key], (cid, key, got[key], exp[key])
               print(cid, "ok:", got["decision"], got["estimated_repair_cost"], got["confidence"])
           PY
       - name: Server log
         if: always()
-        run: cat server.log
+        run: cat server.log server.err 2>/dev/null || true
+
+  browsers:
+    name: Browser tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install app, Playwright and axe-core
+        run: python -m pip install -r requirements-e2e.txt
+      - name: Install Chromium, Firefox and WebKit
+        run: python -m playwright install --with-deps chromium firefox webkit
+      - name: Run end-to-end tests in all three engines
+        run: python -m pytest e2e -q -p no:warnings --junitxml=e2e.xml
+      - name: Browser test report
+        if: always()
+        run: python scripts/test_report.py --e2e-junit e2e.xml --summary-e2e >> "$GITHUB_STEP_SUMMARY"

@@ -8,7 +8,7 @@ This document covers the tests from a tester's point of view: the plan, what eac
 .venv/bin/python scripts/test_report.py      # runs pytest, then rewrites the generated sections below
 ```
 
-The script fails if any test fails, or if a catalogue row points at a test that no longer exists. CI (`.github/workflows/ci.yml`) runs it on every push.
+The script fails if any test fails, or if a catalogue row points at a test that no longer exists. `--with-e2e` also runs the browser tests and regenerates §5b. CI (`.github/workflows/ci.yml`) runs everything on every push.
 
 ## 1. Test plan
 
@@ -17,11 +17,11 @@ The script fails if any test fails, or if a catalogue row points at a test that 
 | **Item under test** | The repair/replace decision service: `POST /decide`, `GET /health`, the page at `/`, and the start command `./run.sh` |
 | **Basis** | The assignment brief (§3 API contract, §4 rules, Appendices D–F) and the interpretations recorded in NOTES.md |
 | **In scope** | API contract; rules D0–D6 and their precedence; input validation and tolerance; text heuristics (hazards, negation, contradictions); missing-field behaviour; determinism; latency; offline operation; fresh-clone start-up; UI smoke and layout |
-| **Out of scope** | Accuracy on real appliance tickets (no real data available); load/soak testing beyond a latency bound; cross-browser matrix (Chrome only); security penetration testing; accessibility audit with assistive technology (only structural checks were done) |
-| **Levels** | Unit (cost, rules, text) → integration (HTTP via FastAPI `TestClient`, in-process) → system (fresh clone + `./run.sh` + real HTTP, in CI) → data-driven acceptance (synthetic corpus, hand-labelled fixtures, challenge set) |
+| **Out of scope** | Accuracy on real appliance tickets (no real data available); load/soak testing beyond a latency bound; security penetration testing; mobile-device browsers (responsive widths are tested in desktop engines, not on physical phones); an automated run of a real screen reader (see §3b: automated accessibility checks plus a manual VoiceOver/NVDA checklist) |
+| **Levels** | Unit (cost, rules, text) → integration (HTTP via FastAPI `TestClient`, in-process) → system (fresh clone + `./run.sh` / `run.ps1` + real HTTP, in CI) → end-to-end UI in real browsers (`e2e/`, Playwright) → data-driven acceptance (synthetic corpus, hand-labelled fixtures, challenge set) |
 | **Techniques** | Equivalence partitioning; boundary-value analysis at every threshold (just below / at / just above); decision tables for warranty × rule × missing input; precedence tests; negative and invalid-input testing; false-friend tests for text ("shock absorber", "fireplace", "current bill"); exploratory testing turned into regression tests; oracle tests against the brief's three examples |
 | **Oracles** | The brief's worked examples and rule text; labels fixed *before* running the engine for hand-labelled and challenge cases; scenario-by-construction labels for the synthetic corpus (not produced by the engine) |
-| **Environment** | Python 3.9 and 3.12 on Ubuntu (CI); Python 3.13 on macOS (local). Pinned dependencies (`requirements.txt`). Sockets and DNS are patched to raise during tests, so the run proves offline operation |
+| **Environment** | CI: Linux, macOS and Windows × Python 3.9, 3.12, 3.13 for the suite; fresh-clone start on all three OSes (`run.sh` on Linux/macOS, `run.ps1` on Windows); browser tests in Chromium, Firefox and WebKit on all three OSes. Local: macOS, Python 3.13 and 3.11. Pinned dependencies (`requirements.txt`, `requirements-e2e.txt`). Sockets and DNS are patched to raise during the unit suite, so the run proves offline operation; the browser tests fail if the page requests anything not served by the local server |
 | **Entry criteria** | Dependencies install from `requirements.txt`; the service starts and `/health` returns ok |
 | **Exit criteria** | 100% of automated tests pass; every requirement in §2 has at least one passing test; the three brief examples match; fresh-clone start-up passes in CI; no open defects of severity High |
 | **Risks** | Hidden test data uses wording and formats we have not seen; the brief is ambiguous on several points (NOTES.md). Both are mitigated by tolerant input handling and documented interpretations, not eliminated |
@@ -158,9 +158,9 @@ A selection of representative cases. The full suite has more, mostly parametrise
 | TC-133 | R30 | Exploratory -> regression | Challenge: OOW | warranty 'OOW' | repair | as expected | ✅ pass |
 <!-- GENERATED:CATALOGUE:END -->
 
-### Manual UI checks
+### 3a. UI checks
 
-The UI is not scored automatically, and there is no automated browser test suite in the repo. These checks were run by driving the real page in headless Chrome, with UI-07 using real key events through the Chrome DevTools protocol. **Last run: 13 October 2026.**
+The UI is not scored by the brief, but it is tested. The checks below are now **automated in `e2e/test_ui.py`** and run in Chromium, Firefox and WebKit (Safari's engine) on Linux, macOS and Windows in CI. Per-browser results are in §5b. The table records what each check covers.
 
 | ID | Check | Expected | Result |
 |---|---|---|---|
@@ -173,6 +173,25 @@ The UI is not scored automatically, and there is no automated browser test suite
 | UI-07 | Keyboard only, real key events via Chrome DevTools | Tab order follows the visual order (skip links → samples → fields top to bottom → submit); every focused control shows a visible focus ring; Enter on a sample loads it; Ctrl+Enter decides and moves focus to the Recommendation heading; Tab reaches "All policy checks" and Enter opens it | Pass (22 controls, none without a visible ring) |
 | UI-08 | Colour contrast of every text/background token pair (WCAG formula) | Text ≥ 4.5:1; focus ring and input borders ≥ 3:1 | Pass after DEF-09 fix (lowest text pair 5.19:1; borders 3.06:1) |
 | UI-09 | Cost breakdown for C-2001 | Parts 6,200 + labour 1.5 h × 900 = 1,350 + travel 40 min ÷ 60 × 900 = 600 = 8,150 | Pass; also asserted in `test_cost_formula_exposes_every_component` |
+| UI-10 | axe-core audit (WCAG 2.x rules) in four states: empty, repair, escalate, validation errors | Zero violations | Automated: `test_axe_finds_no_violations` (after DEF-12 fix) |
+| UI-11 | Accessible names and roles (what a screen reader announces) | Every field announced with its label; required state announced; headings at levels 1 and 2; status messages in live regions; decision-path state given in words, not only colour or icon; comparison bar has a text alternative | Automated: `test_screen_reader_names_and_roles` |
+| UI-12 | Text zoom to 200% (WCAG 1.4.4) | No horizontal scroll at 1280 px | Automated: `test_200_percent_text_zoom_still_fits` |
+| UI-13 | No external requests | Every request goes to the local server | Automated: checked on every browser test by the `page` fixture |
+
+### 3b. Screen readers (manual)
+
+Automated checks (UI-10, UI-11) cover the information a screen reader reads from the page: names, roles, states and live regions. They cannot prove what a particular screen reader actually *says*, and driving VoiceOver or NVDA cannot be automated reliably. So this is a manual step, and it **has not been run yet**. It needs a person at the keyboard.
+
+| ID | Steps (VoiceOver on macOS: Cmd+F5; NVDA on Windows) | Expected |
+|---|---|---|
+| SR-01 | Open `/`, press Tab twice from the top | "Skip to case intake, link", then "Skip to recommendation, link" |
+| SR-02 | Tab to the Case ID field | "Case ID, required, edit text" (wording varies by reader) |
+| SR-03 | Leave Case ID blank and press Ctrl+Enter | Error summary read out ("Check these fields before continuing…"), focus on it |
+| SR-04 | Load sample C-2001, press Ctrl+Enter | Status "Recommendation ready for C-2001: repair." announced; focus on the "Recommendation" heading |
+| SR-05 | Read the result with the reading keys (VO+Right / Down arrow) | "Recommended action, Repair, Decided by rule D2", then the reason, the cost and the comparison text, the decision-path steps with "Ran: not triggered" / "Decided the case" / "Not reached" |
+| SR-06 | Open "All policy checks" with Enter | Each check read with "not triggered", "triggered" or "could not be evaluated" |
+
+Result: _not yet run. Record the reader, its version and the outcome here when done._
 
 ## 4. Defect log
 
@@ -189,21 +208,25 @@ Each defect found during development, how it was found, and the regression test 
 | DEF-07 | Medium | Manual probe while fixing DEF-05 | "koi dhuan nahi, chingari bhi nahi" ("no smoke, no sparks either") was flagged as a hazard | Negation check returned early and never ran the post-negation check | Post-negation checked first; allow "bhi" | TC-087 |
 | DEF-09 | Medium | Contrast check during the UI polish | Input borders were 1.62:1 against white, below the 3:1 WCAG 1.4.11 minimum for control boundaries | Light border token `#c4ccd8` | Border token `#8a94a6` (3.06:1) | UI-08 (manual) |
 | DEF-10 | Low | Code reading during the UI polish | The display-helper block in `app/policy.py` existed twice (identical copies) | An edit replaced a section marker that appeared twice in the file | Duplicate removed; marker renamed so it is unique | Full suite (294 tests) |
+| DEF-11 | High | Browser tests (WebKit) | In Safari's engine, dropdowns showed no focus indicator | WebKit does not apply `:focus-visible` to `<select>` and drops `box-shadow` on native dropdowns | Fields use `:focus` with an `outline` ring | `test_every_focused_control_shows_a_focus_indicator[webkit]` |
+| DEF-12 | Medium | axe-core audit, all engines | Raw-response `<pre>` scrolled sideways but could not be reached by keyboard (`scrollable-region-focusable`, serious) | Scrollable element without `tabindex` | `tabindex="0"`, `role="region"` and a label | `test_axe_finds_no_violations` |
+| DEF-13 | High | Code review before adding Windows to CI | Test suite would crash on Windows: page files read without an encoding (cp1252 cannot decode "—", "÷") | `Path.read_text()` uses the locale encoding | Every read and write states UTF-8 | Windows CI job; suite run with `LC_ALL=C` locally |
+| DEF-14 | Medium | Contrast review of my own fix for DEF-11 | The first replacement focus ring was semi-transparent, about 2:1 against white, below 3:1 | `rgba(..., 0.45)` outline | Solid `var(--focus)` outline, 6.27:1 | UI-08 |
 | DEF-08 | Medium | Code review, before the first test run | Contraction rule would have rewritten "element" as "eleme not" | Regex `n'?t` made the apostrophe optional | Require the apostrophe | `test_normalise_contractions` |
 
 Open defects: none known. Known limitations, which are not defects, are listed in NOTES.md and DATA.md.
 
-## 5. Latest run
+## 5. Latest run (unit and integration suite)
 
 <!-- GENERATED:LATEST-RUN:START -->
-- **Run at:** 2026-10-13 09:02 UTC
+- **Run at:** 2026-10-13 09:20 UTC
 - **Environment:** Python 3.13.7 on Darwin arm64; FastAPI 0.115.6, Pydantic 2.10.4; network blocked by `tests/conftest.py`
 - **Result:** ✅ PASS: 294 passed, 0 failed, 0 skipped, 294 total, 2.8 s
 
 | Test file | Tests | Passed | Failed | Time (s) |
 |---|---|---|---|---|
-| `tests/test_api.py` | 67 | 67 | 0 | 2.53 |
-| `tests/test_challenge.py` | 14 | 14 | 0 | 0.02 |
+| `tests/test_api.py` | 67 | 67 | 0 | 2.52 |
+| `tests/test_challenge.py` | 14 | 14 | 0 | 0.01 |
 | `tests/test_corpora.py` | 8 | 8 | 0 | 0.23 |
 | `tests/test_cost.py` | 13 | 13 | 0 | 0.00 |
 | `tests/test_escalation.py` | 24 | 24 | 0 | 0.03 |
@@ -219,3 +242,35 @@ Metric self-checks on our own data (the brief's metrics; **not** evidence of hid
 | Hand-labelled fixtures | 35 | 1.0 | 1.0 | 35/35 |
 | Challenge set (decision only) | 14 | 1.0 | n/a | 14/14 |
 <!-- GENERATED:LATEST-RUN:END -->
+
+## 5b. Latest browser run (end-to-end)
+
+<!-- GENERATED:E2E:START -->
+- **Run at:** 2026-10-13 09:20 UTC on Darwin arm64, Playwright 1.55.0, axe-core via axe-playwright-python 0.1.8
+- **Result:** ✅ PASS: chromium 22/22, firefox 22/22, webkit 22/22
+
+| Browser test | Chromium | Firefox | WebKit |
+|---|---|---|---|
+| `test_200_percent_text_zoom_still_fits` | ✅ | ✅ | ✅ |
+| `test_add_and_remove_part` | ✅ | ✅ | ✅ |
+| `test_axe_finds_no_violations [empty]` | ✅ | ✅ | ✅ |
+| `test_axe_finds_no_violations [errors]` | ✅ | ✅ | ✅ |
+| `test_axe_finds_no_violations [escalate]` | ✅ | ✅ | ✅ |
+| `test_axe_finds_no_violations [repair]` | ✅ | ✅ | ✅ |
+| `test_brief_examples_render [C-2001]` | ✅ | ✅ | ✅ |
+| `test_brief_examples_render [C-2002]` | ✅ | ✅ | ✅ |
+| `test_brief_examples_render [C-2003]` | ✅ | ✅ | ✅ |
+| `test_client_side_validation` | ✅ | ✅ | ✅ |
+| `test_cost_formula_shows_every_component` | ✅ | ✅ | ✅ |
+| `test_every_focused_control_shows_a_focus_indicator` | ✅ | ✅ | ✅ |
+| `test_keyboard_only_decision` | ✅ | ✅ | ✅ |
+| `test_no_horizontal_scroll [1024]` | ✅ | ✅ | ✅ |
+| `test_no_horizontal_scroll [1440]` | ✅ | ✅ | ✅ |
+| `test_no_horizontal_scroll [1920]` | ✅ | ✅ | ✅ |
+| `test_no_horizontal_scroll [360]` | ✅ | ✅ | ✅ |
+| `test_no_horizontal_scroll [390]` | ✅ | ✅ | ✅ |
+| `test_no_horizontal_scroll [768]` | ✅ | ✅ | ✅ |
+| `test_screen_reader_names_and_roles` | ✅ | ✅ | ✅ |
+| `test_stale_banner_and_rerun` | ✅ | ✅ | ✅ |
+| `test_tab_order_follows_visual_order` | ✅ | ✅ | ✅ |
+<!-- GENERATED:E2E:END -->

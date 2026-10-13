@@ -193,6 +193,8 @@ Unfamiliar wording → no topics → **never** a contradiction. This is what sto
 
 `conftest.py` patches `socket.connect` and `getaddrinfo` to raise, so any network use fails the run.
 
+Browser tests in `e2e/` (Playwright) drive the real page in Chromium, Firefox and WebKit on Linux, macOS and Windows in CI. They check keyboard use, focus, layout, an axe-core audit and screen-reader names. A real screen-reader run is a manual checklist (TESTING.md §3b).
+
 For the tester-style view (test plan, requirements traceability, the 84-case catalogue, defect log, latest results), see [TESTING.md](TESTING.md). It is regenerated from a real run by `scripts/test_report.py`. CI runs everything on Python 3.9 and 3.12 and does a fresh-clone `./run.sh` start check.
 
 **How do you know the test report is honest?** Its result columns are not typed by hand: the script runs pytest, reads the JUnit XML, and fills in each catalogue row from the test it names. It fails if a test fails or if a catalogue row points at a test that no longer exists.

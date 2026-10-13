@@ -29,7 +29,7 @@ def test_index_serves_the_ui(client):
 
 def test_ui_has_no_remote_assets():
     for f in STATIC.iterdir():
-        text = f.read_text()
+        text = f.read_text(encoding="utf-8")
         assert not re.search(r"""(src|href)\s*=\s*["']https?://""", text), f.name
         assert "@import url(" not in text, f.name
         assert not re.search(r"""fetch\(\s*["']https?://""", text), f.name

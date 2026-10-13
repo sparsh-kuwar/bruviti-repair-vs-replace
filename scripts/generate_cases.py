@@ -264,7 +264,7 @@ def main() -> None:
     rows = generate(args.seed, args.per_scenario)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    out.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
     print(f"wrote {len(rows)} cases ({len(SCENARIOS)} scenarios x {args.per_scenario}) to {out}")
 
 

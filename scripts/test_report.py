@@ -3,6 +3,8 @@
     python scripts/test_report.py                 # run pytest, rewrite generated sections of TESTING.md
     python scripts/test_report.py --junit j.xml   # use an existing JUnit file instead of running pytest
     python scripts/test_report.py --junit j.xml --summary   # print a Markdown summary (CI step summary)
+    python scripts/test_report.py --with-e2e      # also run the browser tests (needs requirements-e2e.txt)
+    python scripts/test_report.py --e2e-junit e.xml --summary-e2e   # browser summary for CI
 
 The test-case catalogue and the traceability matrix below are maintained by
 hand; their "Actual" and "Status" columns are filled from the JUnit results, so
@@ -276,9 +278,9 @@ def render_latest_run(results) -> str:
     from generate_cases import generate
     import json
     synthetic = evaluate(generate())
-    hand = evaluate(json.loads((ROOT / "tests" / "fixtures" / "handwritten_cases.json").read_text()))
+    hand = evaluate(json.loads((ROOT / "tests" / "fixtures" / "handwritten_cases.json").read_text(encoding="utf-8")))
     challenge = evaluate([{**r, "expected": {**r["expected"], "estimated_repair_cost": None}}
-                          for r in json.loads((ROOT / "tests" / "fixtures" / "challenge_cases.json").read_text())])
+                          for r in json.loads((ROOT / "tests" / "fixtures" / "challenge_cases.json").read_text(encoding="utf-8"))])
     # The challenge set has no expected costs, so count decision matches only.
     challenge_ok = challenge["n"] - sum(
         1 for m in challenge["misses"] if m["expected"]["decision"] != m["got"]["decision"])
@@ -309,6 +311,40 @@ def render_latest_run(results) -> str:
     return "\n".join(lines)
 
 
+def render_e2e(results) -> str:
+    """Browser-test results per engine, from the e2e JUnit file."""
+    engines = ("chromium", "firefox", "webkit")
+    per = {e: {"tests": 0, "passed": 0, "failed": 0} for e in engines}
+    by_test: Dict[str, Dict[str, str]] = defaultdict(dict)
+    for node, r in results.items():
+        params = node.split("[", 1)[1].rstrip("]") if "[" in node else ""
+        engine = params.split("-", 1)[0]
+        if engine not in per:
+            continue
+        per[engine]["tests"] += 1
+        per[engine][r["status"] if r["status"] in ("passed", "failed") else "failed"] += 1
+        base = node.split("::")[1].split("[")[0]
+        variant = params.split("-", 1)[1] if "-" in params else ""
+        key = base + (f" [{variant}]" if variant else "")
+        by_test[key][engine] = "✅" if r["status"] == "passed" else "❌"
+    import playwright
+    from importlib.metadata import version
+    total_failed = sum(v["failed"] for v in per.values())
+    lines = [
+        f"- **Run at:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')} on {platform.system()} {platform.machine()}, "
+        f"Playwright {version('playwright')}, axe-core via axe-playwright-python {version('axe-playwright-python')}",
+        f"- **Result:** {'✅ PASS' if total_failed == 0 and results else '❌ FAIL'}: "
+        + ", ".join(f"{e} {per[e]['passed']}/{per[e]['tests']}" for e in engines),
+        "",
+        "| Browser test | Chromium | Firefox | WebKit |",
+        "|---|---|---|---|",
+    ]
+    for key in sorted(by_test):
+        row = by_test[key]
+        lines.append(f"| `{esc(key)}` | {row.get('chromium', '—')} | {row.get('firefox', '—')} | {row.get('webkit', '—')} |")
+    return "\n".join(lines)
+
+
 def replace_section(text: str, name: str, body: str) -> str:
     start, end = START.format(name=name), END.format(name=name)
     pattern = re.compile(re.escape(start) + r".*?" + re.escape(end), re.S)
@@ -321,7 +357,15 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--junit", type=Path, help="existing JUnit XML (skip running pytest)")
     ap.add_argument("--summary", action="store_true", help="print a Markdown summary instead of editing TESTING.md")
+    ap.add_argument("--with-e2e", action="store_true", help="also run the browser tests and update their section")
+    ap.add_argument("--e2e-junit", type=Path, help="existing JUnit XML from the browser tests")
+    ap.add_argument("--summary-e2e", action="store_true", help="print only the browser-test summary")
     args = ap.parse_args()
+
+    if args.summary_e2e:
+        e2e = parse_junit(args.e2e_junit)
+        print("## Browser test report\n\n" + render_e2e(e2e))
+        return 1 if any(r["status"] == "failed" for r in e2e.values()) or not e2e else 0
 
     if args.junit:
         results = parse_junit(args.junit)
@@ -336,19 +380,33 @@ def main() -> int:
     trace = render_traceability(results)
     failed = [n for n, r in results.items() if r["status"] == "failed"]
 
+    e2e_failed = []
+    sections = [("LATEST-RUN", latest), ("TRACEABILITY", trace), ("CATALOGUE", catalogue)]
+    if args.with_e2e or args.e2e_junit:
+        if args.e2e_junit:
+            e2e = parse_junit(args.e2e_junit)
+        else:
+            with tempfile.TemporaryDirectory() as tmp:
+                junit = Path(tmp) / "e2e.xml"
+                subprocess.run([sys.executable, "-m", "pytest", "e2e", "-q", "-p", "no:warnings",
+                                f"--junitxml={junit}"], cwd=ROOT, check=False)
+                e2e = parse_junit(junit)
+        e2e_failed = [n for n, r in e2e.items() if r["status"] == "failed"]
+        sections.append(("E2E", render_e2e(e2e)))
+
     if args.summary:
         print("## Test report\n\n" + latest + "\n\n### Requirements traceability\n\n" + trace)
     else:
-        text = TESTING_MD.read_text()
-        for name, body in (("LATEST-RUN", latest), ("TRACEABILITY", trace), ("CATALOGUE", catalogue)):
+        text = TESTING_MD.read_text(encoding="utf-8")
+        for name, body in sections:
             text = replace_section(text, name, body)
-        TESTING_MD.write_text(text)
+        TESTING_MD.write_text(text, encoding="utf-8")
         print(f"TESTING.md updated: {len(results)} tests, {len(failed)} failed, "
               f"{len(CATALOGUE)} catalogue cases, {len(missing)} missing")
 
     for m in missing:
         print(f"MISSING catalogue test: {m}", file=sys.stderr)
-    return 1 if failed or missing else 0
+    return 1 if failed or missing or e2e_failed else 0
 
 
 if __name__ == "__main__":

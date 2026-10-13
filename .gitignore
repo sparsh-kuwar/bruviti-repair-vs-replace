@@ -27,3 +27,8 @@ data/*.jsonl
 
 # Personal VibeWise learning notes (local only)
 .vibe-wise/
+
+# Test output
+junit.xml
+e2e.xml
+test-results/

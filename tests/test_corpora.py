@@ -41,7 +41,7 @@ def test_every_scenario_is_exercised():
 
 
 def test_handwritten_fixtures():
-    rows = json.loads((ROOT / "tests" / "fixtures" / "handwritten_cases.json").read_text())
+    rows = json.loads((ROOT / "tests" / "fixtures" / "handwritten_cases.json").read_text(encoding="utf-8"))
     report = evaluate(rows)
     assert report["misses"] == [], report["misses"]
 

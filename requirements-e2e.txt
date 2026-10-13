@@ -1,0 +1,5 @@
+# End-to-end browser tests (optional; not needed to run the service or the main tests).
+# Install:  pip install -r requirements-e2e.txt && python -m playwright install chromium firefox webkit
+-r requirements.txt
+playwright==1.55.0
+axe-playwright-python==0.1.8

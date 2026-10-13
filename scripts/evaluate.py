@@ -75,7 +75,7 @@ def main() -> None:
     ap.add_argument("--file", help="JSON list or JSONL of {case, expected}")
     args = ap.parse_args()
     if args.file:
-        text = Path(args.file).read_text()
+        text = Path(args.file).read_text(encoding="utf-8")
         rows = json.loads(text) if text.lstrip().startswith("[") else [json.loads(l) for l in text.splitlines() if l.strip()]
     else:
         sys.path.insert(0, str(ROOT / "scripts"))

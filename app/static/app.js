@@ -484,7 +484,7 @@ function renderResult(r) {
         <button type="button" class="btn ghost sm" id="copy-json">Copy JSON response</button>
         <span class="copied" role="status" aria-live="polite"></span>
       </div>
-      <details class="disclose"><summary>Raw response</summary><pre>${esc(JSON.stringify(stripTrace(r), null, 2))}</pre></details>
+      <details class="disclose"><summary>Raw response</summary><pre tabindex="0" role="region" aria-label="Raw JSON response">${esc(JSON.stringify(stripTrace(r), null, 2))}</pre></details>
     </div>`;
 
   $("#copy-note").addEventListener("click", (e) => copyText(caseNote(r), e.currentTarget));

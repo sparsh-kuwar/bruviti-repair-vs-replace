@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-ROWS = json.loads((Path(__file__).parent / "fixtures" / "challenge_cases.json").read_text())
+ROWS = json.loads((Path(__file__).parent / "fixtures" / "challenge_cases.json").read_text(encoding="utf-8"))
 
 
 @pytest.mark.parametrize("row", ROWS, ids=[r["note"] for r in ROWS])
