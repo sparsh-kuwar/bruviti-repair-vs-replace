@@ -61,7 +61,7 @@ Pydantic (v2) does this declaratively. FastAPI turns failures into HTTP 422 resp
 ## 4. Risks and limitations
 
 - **Data:** the corpus is synthetic and written by me, so a 100% self-check score shows consistency with my reading of the policy, not predictive validity.
-- **Text:** the keyword detectors are English-only and miss unseen phrasing.
+- **Text:** the keyword detectors cover English plus a small, documented list of misspellings and Hinglish phrases, and miss other unseen phrasing.
 - **Ambiguity:** several points are ambiguous (null travel, null lead time, null age, the "2 percentage points" wording), and the hidden labels may follow a different reading. Each choice is documented in NOTES.md and isolated in one function.
 - **Confidence:** a documented heuristic, not a calibrated probability.
 - **Validation:** none against real repair outcomes, costs or customer data. No user research was done.

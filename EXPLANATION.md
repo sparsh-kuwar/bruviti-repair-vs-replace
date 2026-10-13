@@ -65,7 +65,7 @@ flowchart TD
 | | `DecisionResponse`, `ExplainedResponse` | Response models (confidence constrained to 0–1). |
 | `app/cost.py` | `exact` | float → exact `Fraction` via its decimal text (0.1 stays 1/10). |
 | | `compute_repair_cost` → `CostResult` | D0 formula. Records which parts are missing a price, whether labour hours or rate is missing, and whether travel is missing. |
-| `app/text.py` | `normalise` | Lower-case, unify quotes, expand contractions (`won't` → `will not`). |
+| `app/text.py` | `normalise` | Lower-case, unify quotes, expand contractions (`won't` → `will not`), fix listed hazard misspellings (`sparkes` → `sparks`), map documented Hinglish phrases (`current lag raha hai` → `getting current`, `dhuan` → `smoke`, `nahi` → `no`). |
 | | `find_safety_hazards` | Regex families for sparks, smoke, fire/burning, gas smell, gas leak, electric shock; skips negated mentions. |
 | | `_is_negated` | NegEx-style backwards walk over filler tokens to a negation cue. |
 | | `find_contradictions` | Fault-family, product-mention and warranty-mention conflicts. |
@@ -166,6 +166,7 @@ Decisions are clamped to [0.40, 0.95]. All numbers are constants at the top of `
   - "not cooling, sparks at plug" → sparks (the "not" belongs to "cooling").
   - "no smoke but sparks" → sparks.
   - "smoke: none" → none (post-negation).
+- **Spelling and Hinglish:** before matching, `normalise` rewrites whole words from an explicit misspelling list (`sparkes`, `smok`, `shok`, `burnig`…), so "sparkling" and "smoker" are left alone. It also rewrites a few documented Hinglish phrases: "current lag/maar raha hai" → "getting current", "dhuan/dhuaan" → "smoke", "chingari" → "sparks", "aag lag gayi" → "caught fire", "gas ki smell" → "smell of gas". "nahi" becomes "no", so "dhuan nahi hai" is post-negated and "current nahi lag raha" never matches the shock phrase. I chose explicit lists over fuzzy matching so every rewrite can be explained and tested.
 - **Exclusions:** "shock absorber" is not a shock. "Fireplace" doesn't match `\bfire\b`. "Gas leak" on an AC or fridge means refrigerant, not a hazard, but a gas *smell* always counts.
 
 **Contradictions** (`find_contradictions`) come in three kinds:
@@ -175,7 +176,7 @@ Decisions are clamped to [0.40, 0.95]. All numbers are constants at the top of `
 
 Unfamiliar wording → no topics → **never** a contradiction. This is what stops "escalate everything".
 
-## 7. Tests (225, all offline)
+## 7. Tests (287, all offline)
 
 | File | What it proves |
 |---|---|
@@ -185,13 +186,14 @@ Unfamiliar wording → no topics → **never** a contradiction. This is what sto
 | `test_escalation.py` | D5a truth table (1 vs 2 repairs × sentiments); D5b; hazards keep the cost; escalation beats D3, D1b and D2; multiple triggers in one sentence; normal cases are *not* escalated. |
 | `test_text.py` | Positive, negative and negated hazard phrases; negation not leaking across clauses; refrigerant rule; one matching and one conflicting text for each of the 12 fault categories; product and warranty contradictions; unfamiliar text. |
 | `test_api.py` | `/health`, `/`, no remote assets; exact response keys; case-ID echo (including int and unicode); 422 for bad enums, negatives, NaN/∞, wrong types, malformed JSON; tolerance for casing, synonyms, numeric strings and `labor_*`; every field missing or null still gives 200; `purchase_price` has no effect; determinism; latency < 0.25 s even with 200 parts and long text. |
+| `test_challenge.py` | The 14-case post-build challenge over HTTP. Three cases originally failed ("sparkes", "current lag raha hai", `OOW`) and are now regressions, with labels unchanged. |
 | `test_corpora.py` | Synthetic corpus (3 seeds) and 35 hand-labelled cases: zero misses; generator determinism and balance; macro-F1 code checked against a hand calculation. |
 
 `conftest.py` patches `socket.connect` and `getaddrinfo` to raise, so any network use fails the run.
 
 ## 8. Limitations to state openly
 
-- The text detectors are keyword-based and English-only; novel hazard phrasing will be missed.
+- The text detectors are keyword-based: English plus a small documented Hinglish and misspelling list. Novel hazard phrasing will be missed.
 - The ambiguous interpretations (null travel, null lead time, null age, the near-threshold band) may differ from Bruviti's reading.
 - Confidence is not calibrated.
 - The synthetic data is mine, so the 100% scores are consistency checks, not accuracy.
@@ -222,5 +224,7 @@ Unfamiliar wording → no topics → **never** a contradiction. This is what sto
 **How do you know the synthetic labels aren't circular?** They are assigned by scenario design from the written rules, and costs are recomputed independently. The engine is never used to label. The corpus caught a real bug ("gave my son a shock").
 
 **Why does `?explain=true` exist instead of adding fields to the response?** The contract lists exactly five fields; the graders' parser may be strict. The trace is opt-in, for the UI and for audits.
+
+**How did you handle misspellings and Hinglish?** With explicit whole-word and phrase lists applied before detection, not fuzzy matching or an LLM, so every rewrite is explainable and tested next to near-miss negatives ("sparkling", "current bill", "current nahi lag raha"). I added them after a 14-case challenge missed "sparkes" and "current lag raha hai". I kept that challenge's labels unchanged.
 
 **What happens if the engine itself crashes?** The handler catches it and returns `escalate` with confidence 0.3 and a "manual review" reason. A valid case never gets a 500.

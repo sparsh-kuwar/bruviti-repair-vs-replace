@@ -101,6 +101,10 @@ _WARRANTY_ALIASES = {
     "within_warranty": "in_warranty",
     "inwarranty": "in_warranty",
     "extended_warranty": "extended",
+    # Documented abbreviations (case and surrounding spaces already normalised)
+    "iw": "in_warranty",
+    "ew": "extended",
+    "oow": "out_of_warranty",
     "expired": "out_of_warranty",
     "no_warranty": "out_of_warranty",
     "out_warranty": "out_of_warranty",

@@ -165,3 +165,57 @@ def test_warranty_text_contradicts_field():
     assert find_contradictions("still under warranty", "other", None, "out_of_warranty")[0].field == "warranty_status"
     assert find_contradictions("not under warranty", "other", None, "out_of_warranty") == []
     assert find_contradictions("warranty expired", "other", None, "unknown") == []
+
+
+# ------------------------------------------------------------------ spelling variants and Hinglish
+# Regression for the post-build challenge: "sparkes" and "current lag raha hai"
+# were missed. Nearby negatives guard against over-broad rewriting.
+
+
+@pytest.mark.parametrize("text,kind", [
+    ("sparkes from the plug point", "sparks"),          # regression
+    ("SPARKES!!! from the socket", "sparks"),
+    ("sparkz near the switch", "sparks"),
+    ("Smok coming out of the back", "smoke"),
+    ("got a shok from the door", "electric shock"),
+    ("electic shock when touched", "electric shock"),
+    ("burnig smell from the motor", "fire"),
+    ("body mein current lag raha hai", "electric shock"),  # regression
+    ("Body Mein CURRENT LAG RAHA HAI.", "electric shock"),
+    ("machine mein current maar raha tha", "electric shock"),
+    ("dhuaan nikal raha hai", "smoke"),
+    ("dhuan aa raha hai", "smoke"),
+    ("chingari nikli plug se", "sparks"),
+    ("aag lag gayi thi", "fire"),
+    ("gas ki smell aa rahi hai", "gas smell"),
+    ("jalne ki smell aa rahi hai", "fire"),
+])
+def test_spelling_variant_and_hinglish_hazards(text, kind):
+    assert kind in [h.kind for h in find_safety_hazards(text)]
+
+
+@pytest.mark.parametrize("text", [
+    "no sparkes, no smok",               # negation still applies after respelling
+    "No sparks, no smoke.",
+    "current nahi lag raha",             # negated Hinglish phrase is not rewritten
+    "dhuan nahi hai",                    # post-negation: "smoke no"
+    "koi dhuan nahi, chingari bhi nahi", # "bhi nahi" = "not either"
+    "sparkes? no",
+    "sparkling clean drum after wash",   # whole-word list: "sparkling" untouched
+    "smoker lives in the house",
+    "current bill is very high",         # "current" alone is not a shock
+    "current model is out of stock",
+    "fan speed is low",
+])
+def test_variants_do_not_create_false_hazards(text):
+    assert find_safety_hazards(text) == []
+
+
+@pytest.mark.parametrize("text,kinds", [
+    ("no smoke but sparkes from plug", {"sparks"}),
+    ("no smoke, sparks bhi aa rahe", {"sparks"}),
+    ("chingari aur dhuan dono", {"sparks", "smoke"}),
+    ("dhuan nahi, but burnig smell", {"fire"}),
+])
+def test_mixed_hazard_descriptions(text, kinds):
+    assert {h.kind for h in find_safety_hazards(text)} == kinds

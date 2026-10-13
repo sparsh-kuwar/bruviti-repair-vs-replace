@@ -41,6 +41,37 @@ _CONTRACTIONS = [
 ]
 
 
+# Common misspellings of hazard words, mapped to the spelling the detectors
+# know. An explicit list, not fuzzy matching: each entry is a whole word, so
+# "sparkling" or "smoker" are never rewritten. Applied before detection.
+_SPELLING_VARIANTS = {
+    "sparkes": "sparks", "sparkz": "sparks", "spraks": "sparks", "sprak": "spark",
+    "sparkin": "sparking", "sparkng": "sparking", "sparkign": "sparking", "sprking": "sparking",
+    "smok": "smoke", "smoek": "smoke", "smoak": "smoke", "somke": "smoke", "smokin": "smoking",
+    "shok": "shock", "shcok": "shock", "shoked": "shocked", "shokd": "shocked",
+    "electic": "electric", "elecrtic": "electric", "electrik": "electric", "eletric": "electric",
+    "burnig": "burning", "buring": "burning", "brning": "burning",
+    "flams": "flames", "flmaes": "flames",
+}
+
+# Documented Hinglish (romanised Hindi) phrases common in Indian service tickets,
+# rewritten to English the detectors already understand. Phrase-level on
+# purpose: "current lag raha hai" (getting a shock) is mapped, but "current"
+# alone is not. A negated phrase ("current nahi lag raha") does not match, and
+# "nahi" after a hazard word becomes post-negation ("dhuan nahi" -> "smoke no").
+_HINGLISH = [
+    (r"\bcurrent (lag|maar|aa) (raha|rahi|rahe|gaya|gayi)( hai| tha| thi)?\b", "getting current"),
+    (r"\bcurrent (lagta|lagti|lagte|marta|maarta)( hai)?\b", "getting current"),
+    (r"\bdhu+a+n?\b|\bdhoo?an\b", "smoke"),
+    (r"\bching(a|aa)ri(yan|yaan|ya)?\b", "sparks"),
+    (r"\baag (lag gayi|lag gai|lag gaya|lagi|lag|pakad\w*)\b", "caught fire"),
+    (r"\baag\b", "fire"),
+    (r"\bgas ki (smell|badbu|boo|bu)\b", "smell of gas"),
+    (r"\bjal(ne|ane) ki (smell|badbu|boo|bu)\b", "burning smell"),
+    (r"\b(nahi|nahin|nahee|nai)( hai| tha| thi)?\b", "no"),
+]
+
+
 def normalise(text: str) -> str:
     t = (text or "").lower()
     t = t.replace("’", "'").replace("‘", "'").replace("`", "'")
@@ -51,6 +82,9 @@ def normalise(text: str) -> str:
     t = re.sub(r"\b(does|is|did|was|were|has|have|had|are|could|would|should)nt\b", r"\1 not", t)
     t = re.sub(r"\bwont\b", "will not", t)
     t = re.sub(r"\bcant\b", "cannot", t)
+    t = re.sub(r"[a-z]+", lambda m: _SPELLING_VARIANTS.get(m.group(0), m.group(0)), t)
+    for pattern, repl in _HINGLISH:
+        t = re.sub(pattern, repl, t)
     return re.sub(r"\s+", " ", t).strip()
 
 
@@ -129,7 +163,8 @@ _FILLERS = {
     "real", "actual", "such", "as", "longer", "at", "all", "whatsoever", "caught",
     "on", "it", "ever", "evidence",
 }
-_POST_NEGATION = re.compile(r"^\s*[:\-?]*\s*(no|none|nil|negative|not (seen|observed|present|reported))\b")
+# "smoke: none", "sparks? no", and Hinglish "chingari bhi nahi" (-> "sparks bhi no")
+_POST_NEGATION = re.compile(r"^\s*[:\-?]*\s*(bhi )?(no|none|nil|negative|not (seen|observed|present|reported))\b")
 _TOKEN = re.compile(r"[a-z0-9']+|[,;.!?:()\-]")
 _SCOPE_WINDOW = 8
 
@@ -153,22 +188,23 @@ def _is_negated(norm: str, start: int, end: int) -> bool:
     between cue and mention, or follow the mention. Otherwise a comma starts a new
     clause ("no smoke, burning smell from the back" still reports burning).
     """
+    # Post-negation first: "smoke: none", "sparks? no", "chingari bhi nahi".
+    if _POST_NEGATION.match(norm[end:]):
+        return True
     before = _TOKEN.findall(norm[:start])
     after = _TOKEN.findall(norm[end:])
     crossed: List[str] = []
     for tok in reversed(before):
         if tok in _NEGATION_CUES:
             if "," in crossed:
-                coordinated = any(t in {"or", "nor"} for t in crossed) or (
+                return any(t in {"or", "nor"} for t in crossed) or (
                     bool(after) and after[0] in {"or", "nor", ","}
                 )
-                return coordinated
             return True
         if tok not in _FILLERS or len(crossed) >= _SCOPE_WINDOW:
             break
         crossed.append(tok)
-    # "smoke: none", "sparks? no"
-    return bool(_POST_NEGATION.match(norm[end:]))
+    return False
 
 
 def find_safety_hazards(text: str, product_category: Optional[str] = None) -> List[Hazard]:

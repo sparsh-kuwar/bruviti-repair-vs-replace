@@ -167,3 +167,27 @@ def test_latency_well_under_one_second(client):
         assert client.post("/decide", json=payload).status_code == 200
     per_request = (time.perf_counter() - start) / 20
     assert per_request < 0.25, per_request   # generous bound; the brief's limit is 1 s
+
+
+# ------------------------------------------------------------------ warranty abbreviations (regression)
+
+
+@pytest.mark.parametrize("raw,canonical", [
+    ("OOW", "out_of_warranty"), (" oow ", "out_of_warranty"), ("Oow", "out_of_warranty"),
+    ("IW", "in_warranty"), ("iw", "in_warranty"),
+    ("EW", "extended"), (" Ew", "extended"),
+])
+def test_warranty_abbreviations(raw, canonical):
+    from app.schemas import ServiceCase
+    assert ServiceCase.model_validate(case(warranty_status=raw)).warranty_status.value == canonical
+
+
+def test_oow_abbreviation_gives_same_decision_as_full_value(client):
+    full = client.post("/decide", json=case(warranty_status="out_of_warranty")).json()
+    abbr = client.post("/decide", json=case(warranty_status="OOW")).json()
+    assert abbr == full
+
+
+@pytest.mark.parametrize("raw", ["OOWX", "O O W", "W", "oo", "XW"])
+def test_unknown_abbreviations_stay_invalid(client, raw):
+    assert client.post("/decide", json=case(warranty_status=raw)).status_code == 422

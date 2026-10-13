@@ -34,7 +34,7 @@ Once the service is ready:
 .venv/bin/python -m pytest -q
 ```
 
-There are 225 tests. They run fully offline: `tests/conftest.py` disables sockets for the whole session, and FastAPI's `TestClient` calls the app in-process. They cover every rule and boundary, precedence, the three brief examples, text heuristics, validation, the HTTP contract, determinism and latency.
+There are 287 tests. They run fully offline: `tests/conftest.py` disables sockets for the whole session, and FastAPI's `TestClient` calls the app in-process. They cover every rule and boundary, precedence, the three brief examples, text heuristics, validation, the HTTP contract, determinism and latency.
 
 Score the engine with the brief's metrics (macro-F1, share of costs within 10%):
 

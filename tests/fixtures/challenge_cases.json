@@ -1,0 +1,388 @@
+[
+ {
+  "note": "plain repair",
+  "case": {
+   "case_id": "P0",
+   "product_category": "air_conditioner",
+   "product_age_months": 50,
+   "purchase_price": 45000,
+   "replacement_price": 42000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": 35,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "ac not cooling, fan runs"
+  },
+  "expected": {
+   "decision": "repair"
+  }
+ },
+ {
+  "note": "new hazard wording: 'acrid smoke'",
+  "case": {
+   "case_id": "P1",
+   "product_category": "air_conditioner",
+   "product_age_months": 50,
+   "purchase_price": 45000,
+   "replacement_price": 42000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": 35,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "AC gives off acrid smoke and fan stops"
+  },
+  "expected": {
+   "decision": "escalate"
+  }
+ },
+ {
+  "note": "hazard wording NOT in vocabulary",
+  "case": {
+   "case_id": "P2",
+   "product_category": "air_conditioner",
+   "product_age_months": 50,
+   "purchase_price": 45000,
+   "replacement_price": 42000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": 35,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "loud pop then a burning plastic stink"
+  },
+  "expected": {
+   "decision": "escalate"
+  }
+ },
+ {
+  "note": "misspelt hazard 'sparkes'",
+  "case": {
+   "case_id": "P3",
+   "product_category": "air_conditioner",
+   "product_age_months": 50,
+   "purchase_price": 45000,
+   "replacement_price": 42000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": 35,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "sparkes from the plug point"
+  },
+  "expected": {
+   "decision": "escalate"
+  }
+ },
+ {
+  "note": "Hinglish 'current lag raha'",
+  "case": {
+   "case_id": "P4",
+   "product_category": "air_conditioner",
+   "product_age_months": 50,
+   "purchase_price": 45000,
+   "replacement_price": 42000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": 35,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "body mein current lag raha hai"
+  },
+  "expected": {
+   "decision": "escalate"
+  }
+ },
+ {
+  "note": "negated hazard",
+  "case": {
+   "case_id": "P5",
+   "product_category": "air_conditioner",
+   "product_age_months": 50,
+   "purchase_price": 45000,
+   "replacement_price": 42000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": 35,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "not cooling, checked - no sparks, no smoke"
+  },
+  "expected": {
+   "decision": "repair"
+  }
+ },
+ {
+  "note": "contradiction: microwave words",
+  "case": {
+   "case_id": "P6",
+   "product_category": "air_conditioner",
+   "product_age_months": 50,
+   "purchase_price": 45000,
+   "replacement_price": 42000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": 35,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "microwave turntable not rotating"
+  },
+  "expected": {
+   "decision": "escalate"
+  }
+ },
+ {
+  "note": "format: 'Out Of Warranty', '42,000'",
+  "case": {
+   "case_id": "P7",
+   "product_category": "air_conditioner",
+   "product_age_months": 50,
+   "purchase_price": 45000,
+   "replacement_price": "42,000",
+   "warranty_status": "Out Of Warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": 35,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "ac not cooling, fan runs"
+  },
+  "expected": {
+   "decision": "repair"
+  }
+ },
+ {
+  "note": "unusual enum 'OOW'",
+  "case": {
+   "case_id": "P8",
+   "product_category": "air_conditioner",
+   "product_age_months": 50,
+   "purchase_price": 45000,
+   "replacement_price": 42000,
+   "warranty_status": "OOW",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": 35,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "ac not cooling, fan runs"
+  },
+  "expected": {
+   "decision": "repair"
+  }
+ },
+ {
+  "note": "unusual enum 'Air Conditioner'",
+  "case": {
+   "case_id": "P9",
+   "product_category": "Air Conditioner",
+   "product_age_months": 50,
+   "purchase_price": 45000,
+   "replacement_price": 42000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": 35,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "ac not cooling, fan runs"
+  },
+  "expected": {
+   "decision": "repair"
+  }
+ },
+ {
+  "note": "null travel",
+  "case": {
+   "case_id": "P10",
+   "product_category": "air_conditioner",
+   "product_age_months": 50,
+   "purchase_price": 45000,
+   "replacement_price": 42000,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": null,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "ac not cooling, fan runs"
+  },
+  "expected": {
+   "decision": "repair"
+  }
+ },
+ {
+  "note": "null replacement, young",
+  "case": {
+   "case_id": "P11",
+   "product_category": "air_conditioner",
+   "product_age_months": 50,
+   "purchase_price": 45000,
+   "replacement_price": null,
+   "warranty_status": "out_of_warranty",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": 35,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "ac not cooling, fan runs"
+  },
+  "expected": {
+   "decision": "escalate"
+  }
+ },
+ {
+  "note": "unknown warranty, 20 months",
+  "case": {
+   "case_id": "P12",
+   "product_category": "air_conditioner",
+   "product_age_months": 20,
+   "purchase_price": 45000,
+   "replacement_price": 42000,
+   "warranty_status": "unknown",
+   "fault_category": "not_cooling",
+   "parts": [
+    {
+     "sku": "AC-CAP",
+     "description": "capacitor",
+     "price": 1800,
+     "lead_time_days": 3
+    }
+   ],
+   "labour_hours": 1,
+   "labour_rate_per_hour": 700,
+   "technician_travel_minutes": 35,
+   "prior_repairs_12m": 0,
+   "customer_sentiment": "neutral",
+   "symptom_text": "ac not cooling, fan runs"
+  },
+  "expected": {
+   "decision": "repair"
+  }
+ },
+ {
+  "note": "everything missing but id",
+  "case": {
+   "case_id": "P13"
+  },
+  "expected": {
+   "decision": "escalate"
+  }
+ }
+]

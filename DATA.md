@@ -10,6 +10,7 @@ There are three sets:
 |---|---|---|---|
 | `examples/C-200x.*.json` | 3 | Copied from the brief | Exact regression against the published answers |
 | `tests/fixtures/handwritten_cases.json` | 35 | Hand-written. Each expected label was fixed from my reading of the brief *before* running the engine | Adversarial, hidden-test-style cases: wording variants, format noise, nulls, boundaries, precedence |
+| `tests/fixtures/challenge_cases.json` | 14 | Hand-written after the build, in styles absent from the tests (new wording, a misspelling, Hinglish, abbreviations, nulls). Labels fixed before running and never changed | Probe for "unseen data" behaviour; now a regression test |
 | Synthetic corpus (`scripts/generate_cases.py`) | 760 by default (19 scenarios × 40) | Seeded generator, `--seed 2026` | Broad, balanced coverage and a metric self-check |
 
 Regenerate the synthetic corpus with:
@@ -57,13 +58,15 @@ No model is trained, so there is no train/test split. The corpus is used only to
 
 Current results: **macro-F1 1.0 and cost-within-10% 1.0** on both the synthetic corpus and the 35 hand-labelled cases. These numbers say only that the engine agrees with my reading of the policy on data I wrote. They are **not** evidence of accuracy on Bruviti's hidden set or on real tickets.
 
+The challenge set first scored **11/14**. It missed "sparkes from the plug point" (misspelling), "body mein current lag raha hai" (Hinglish for getting a shock) and warranty `"OOW"` (rejected with 422). The fixes are an explicit whole-word misspelling list, a short phrase-level Hinglish list (with "nahi" treated as negation), and the `OOW`/`IW`/`EW` aliases. It now scores 14/14 with unchanged labels. Neighbouring negatives ("sparkling", "current bill", "current nahi lag raha", "dhuan nahi hai") are tested so the fixes don't over-trigger. These are targeted fixes, so 14/14 is no evidence of general robustness.
+
 The corpus did find real bugs. The first run missed 3 of 40 hazard cases, all worded "the casing gave my son a shock", because the shock pattern needed the verb right next to "shock". It now allows up to three words in between, and still excludes "shock absorber". The tests also exposed a 500 error on `NaN` inputs, which is now fixed.
 
 ## What I expect to break on real data
 
-- **Unseen symptom wording.** Hazards described without the listed words ("acrid haze", "plastic melting smell", "it went bang and the lights went out"), misspellings ("sparkes"), other languages and transliterations, and abbreviations are missed. Hazard recall is the weakest point, and a miss there is the costly error.
+- **Unseen symptom wording.** Hazards described without the listed words ("acrid haze", "plastic melting smell", "it went bang and the lights went out"), misspellings not on the explicit list ("spaarks"), other languages and Hinglish phrasings beyond the documented few, and abbreviations are missed. Hazard recall is the weakest point, and a miss there is the costly error.
 - **Negation and context.** Long-distance or unusual negation ("I can't say I saw smoke"), hypotheticals and reported speech can flip the result. "Worried it might catch fire" is treated as a hazard on purpose, to err towards safety.
 - **Contradictions.** The fault-family vocabulary is hand-built. Text that uses a related but unlisted word for the declared fault can be flagged wrongly; subtle conflicts will be missed. The detector is deliberately conservative: it needs the text to describe *only* incompatible fault families.
-- **Format drift.** Enum values outside my synonym table get a 422. So do nested shapes such as `parts` as an object, and currency formats outside the handled ones.
+- **Format drift.** Enum values outside my synonym and abbreviation tables get a 422 (`OOW`/`IW`/`EW` are handled; `O.O.W.` or `expired-wty` are not). So do nested shapes such as `parts` as an object, and currency formats outside the handled ones.
 - **Distribution shift.** Real cases cluster near thresholds and have partial data more often than my corpus does, so near-threshold and missing-data behaviour will matter more than the synthetic scores suggest.
 - **Policy interpretation.** Where the brief is ambiguous (null travel, null lead time, null age, "within 2 percentage points"), the hidden labels may follow a different reading. Those choices are listed in NOTES.md, and each has a test that would make a change easy.

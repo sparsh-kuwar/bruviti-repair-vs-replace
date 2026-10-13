@@ -112,3 +112,19 @@ def test_normal_cases_are_not_escalated():
     decisions = [run(ratio_case(p, warranty_status=s)).decision
                  for p in (1000, 4000, 5500, 7000) for s in ("in_warranty", "out_of_warranty")]
     assert "escalate" not in decisions
+
+
+@pytest.mark.parametrize("text", ["sparkes from the plug point", "body mein current lag raha hai",
+                                  "dhuaan nikal raha hai"])
+def test_new_hazard_wording_beats_every_rule(text):
+    # Would otherwise be: D2 repair, D1b replace, D3 replace.
+    assert run(case(symptom_text=text)).decision == "escalate"
+    d1b = case(warranty_status="in_warranty", symptom_text=text)
+    d1b["parts"][0]["lead_time_days"] = 40
+    assert run(d1b).decision == "escalate"
+    assert run(ratio_case(5000, warranty_status="in_warranty", technician_travel_minutes=200,
+                          labour_rate_per_hour=0, symptom_text=text)).decision == "escalate"
+
+
+def test_negated_new_wording_keeps_normal_decision():
+    assert run(case(symptom_text="dhuan nahi, chingari bhi nahi, drum does not turn")).decision == "repair"
