@@ -220,3 +220,20 @@ def test_variants_do_not_create_false_hazards(text):
 ])
 def test_mixed_hazard_descriptions(text, kinds):
     assert {h.kind for h in find_safety_hazards(text)} == kinds
+
+
+def test_negation_window_does_not_read_a_cut_word_as_negation():
+    # 400+ characters of filler-free text, then a hazard: the bounded scan window
+    # starts mid-word ("...piano") and must not mistake the fragment "no" for a cue.
+    text = ("x" * 395) + "piano sparks from the socket"
+    assert [h.kind for h in find_safety_hazards(text)] == ["sparks"]
+
+
+def test_hazard_detection_scales_linearly():
+    # Regression: _is_negated used to re-tokenise the whole text for every match
+    # (O(n^2)): 14,600 characters took ~100 ms; 73,000 would have taken seconds.
+    import time
+    text = "No sparks or smoke but the drum does not turn and the motor hums loudly. " * 1000
+    start = time.perf_counter()
+    assert find_safety_hazards(text) == []
+    assert time.perf_counter() - start < 1.0

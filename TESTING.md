@@ -41,7 +41,7 @@ Every requirement maps to the automated tests that cover it (matched by test nam
 | R06 | reason is one sentence naming the deciding rule | Brief §3 | 4 | ✅ 4/4 | TC-013 |
 | R07 | GET /health returns 200 {"status": "ok"} | Brief §4 | 1 | ✅ 1/1 | TC-001, TC-143 |
 | R08 | Single page served at / by the same process; no remote assets | Brief §4–5 | 2 | ✅ 2/2 | TC-002, TC-003 |
-| R09 | Works with the network off; tests run offline | Brief §4–5 | 306 | ✅ 306/306 | — |
+| R09 | Works with the network off; tests run offline | Brief §4–5 | 308 | ✅ 308/308 | — |
 | R10 | Each request answered in under 1 second | Brief §4 | 1 | ✅ 1/1 | TC-007 |
 | R11 | D0 repair-cost formula; null only when it cannot be computed | Appendix D0 | 15 | ✅ 15/15 | TC-020, TC-021, TC-022, TC-023, TC-024, TC-025, TC-026 |
 | R12 | D1a in/extended warranty: replace if cost > 60% of replacement | Appendix D1 | 8 | ✅ 8/8 | TC-030, TC-031, TC-032 |
@@ -52,7 +52,7 @@ Every requirement maps to the automated tests that cover it (matched by test nam
 | R17 | D5 escalate: >= 2 repairs and negative sentiment | Appendix D5 | 7 | ✅ 7/7 | TC-070, TC-071, TC-072 |
 | R18 | D5 escalate: null part price or labour hours | Appendix D5 | 3 | ✅ 3/3 | TC-073, TC-074 |
 | R19 | D5 escalate: replacement price null and the decision depends on it | Appendix D5 | 7 | ✅ 7/7 | TC-075, TC-076, TC-077 |
-| R20 | D5 escalate: safety hazard in symptom text (negation-aware) | Appendix D5 | 76 | ✅ 76/76 | TC-078, TC-079, TC-080, TC-081, TC-082, TC-083, TC-084, TC-085, TC-086, TC-087, TC-088, TC-089 |
+| R20 | D5 escalate: safety hazard in symptom text (negation-aware) | Appendix D5 | 77 | ✅ 77/77 | TC-078, TC-079, TC-080, TC-081, TC-082, TC-083, TC-084, TC-085, TC-086, TC-087, TC-088, TC-089 |
 | R21 | D5 escalate: symptom text contradicts structured fields | Appendix D5 | 31 | ✅ 31/31 | TC-090, TC-091, TC-092, TC-093, TC-094 |
 | R22 | D6 precedence: D5 > D3 > D1/D2 | Appendix D6 | 7 | ✅ 7/7 | TC-100, TC-101, TC-102 |
 | R23 | D6 within 2 percentage points: decide by rule, lower confidence | Appendix D6 | 9 | ✅ 9/9 | TC-103, TC-104 |
@@ -223,6 +223,7 @@ Each defect found during development, how it was found, and the regression test 
 | DEF-17 | Medium | Windows CI timing | A "240 s" health wait took about 12.5 minutes | Each `curl` to a refused port takes about 2 s on Windows, with no per-request timeout, and `localhost` tried IPv6 first | 2 s per-request timeout, 60 s overall deadline, `127.0.0.1`, diagnostics on failure (process alive, port listening, last error, log tail) | TC-142 |
 | DEF-18 | High | Windows CI | Every Windows unit-test run failed: `'ProactorEventLoop' object has no attribute '_ssock'` | The test network guard blocked all `connect` calls, but Windows' event loop builds its internal socketpair by connecting to 127.0.0.1 | Guard allows loopback only; external hosts and DNS still raise | `test_network_guard_blocks_external_hosts_but_allows_loopback` |
 | DEF-19 | Low | Windows CI | Browser report crashed after 66/66 tests passed: `UnicodeEncodeError` on "✅" | Windows console uses cp1252 | Report reconfigures stdout/stderr to UTF-8 | Windows browser job |
+| DEF-20 | Medium | CI latency test on slower runners (0.26–0.28 s vs the 0.25 s bound) | The worst-case request (200 parts, 14,600-character text) took about 122 ms locally | `_is_negated` re-tokenised the whole text for every hazard mention, so it was O(n²) | Scan a bounded window (400 chars, cut word dropped); now 26 ms locally, linear in text length. The 0.25 s bound was kept, not loosened | `test_hazard_detection_scales_linearly`, `test_negation_window_does_not_read_a_cut_word_as_negation`, `test_latency_well_under_one_second` |
 | DEF-08 | Medium | Code review, before the first test run | Contraction rule would have rewritten "element" as "eleme not" | Regex `n'?t` made the apostrophe optional | Require the apostrophe | `test_normalise_contractions` |
 
 Open defects: none known. Known limitations, which are not defects, are listed in NOTES.md and DATA.md.
@@ -230,21 +231,21 @@ Open defects: none known. Known limitations, which are not defects, are listed i
 ## 5. Latest run (unit and integration suite)
 
 <!-- GENERATED:LATEST-RUN:START -->
-- **Run at:** 2026-10-13 09:42 UTC
+- **Run at:** 2026-10-13 09:57 UTC
 - **Environment:** Python 3.13.7 on Darwin arm64; FastAPI 0.128.8, Pydantic 2.13.5; network blocked by `tests/conftest.py`
-- **Result:** ✅ PASS: 306 passed, 0 failed, 0 skipped, 306 total, 7.3 s
+- **Result:** ✅ PASS: 308 passed, 0 failed, 0 skipped, 308 total, 5.5 s
 
 | Test file | Tests | Passed | Failed | Time (s) |
 |---|---|---|---|---|
-| `tests/test_api.py` | 68 | 68 | 0 | 2.52 |
+| `tests/test_api.py` | 68 | 68 | 0 | 0.61 |
 | `tests/test_challenge.py` | 14 | 14 | 0 | 0.01 |
 | `tests/test_corpora.py` | 8 | 8 | 0 | 0.23 |
 | `tests/test_cost.py` | 13 | 13 | 0 | 0.00 |
 | `tests/test_escalation.py` | 24 | 24 | 0 | 0.03 |
 | `tests/test_examples.py` | 6 | 6 | 0 | 0.01 |
 | `tests/test_rules.py` | 60 | 60 | 0 | 0.02 |
-| `tests/test_startup.py` | 11 | 11 | 0 | 4.53 |
-| `tests/test_text.py` | 102 | 102 | 0 | 0.00 |
+| `tests/test_startup.py` | 11 | 11 | 0 | 4.56 |
+| `tests/test_text.py` | 104 | 104 | 0 | 0.05 |
 
 Metric self-checks on our own data (the brief's metrics; **not** evidence of hidden-set accuracy):
 

@@ -167,6 +167,7 @@ _FILLERS = {
 _POST_NEGATION = re.compile(r"^\s*[:\-?]*\s*(bhi )?(no|none|nil|negative|not (seen|observed|present|reported))\b")
 _TOKEN = re.compile(r"[a-z0-9']+|[,;.!?:()\-]")
 _SCOPE_WINDOW = 8
+_CONTEXT_CHARS = 400  # comfortably more than _SCOPE_WINDOW tokens
 
 
 @dataclass(frozen=True)
@@ -191,8 +192,14 @@ def _is_negated(norm: str, start: int, end: int) -> bool:
     # Post-negation first: "smoke: none", "sparks? no", "chingari bhi nahi".
     if _POST_NEGATION.match(norm[end:]):
         return True
-    before = _TOKEN.findall(norm[:start])
-    after = _TOKEN.findall(norm[end:])
+    # Only the nearest tokens matter (scope window), so scan a bounded slice
+    # instead of the whole text: keeps detection linear in text length.
+    lo = max(0, start - _CONTEXT_CHARS)
+    window = norm[lo:start]
+    if lo > 0:  # drop a word the slice may have cut in half ("pia|no" must not read as "no")
+        window = window.split(" ", 1)[1] if " " in window else ""
+    before = _TOKEN.findall(window)
+    after = _TOKEN.findall(norm[end:end + 40])
     crossed: List[str] = []
     for tok in reversed(before):
         if tok in _NEGATION_CUES:
