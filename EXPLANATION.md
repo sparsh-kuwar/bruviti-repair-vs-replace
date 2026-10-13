@@ -77,7 +77,7 @@ flowchart TD
 | | `_warranty_branches` | D4: returns one branch, or two when the age is missing. |
 | | `_ratio_exceeds`, `_age_within_life` | Three-valued tests (True / False / None = unknown) that also record near-threshold notes. |
 | | `_confidence` | The heuristic in one function. |
-| | `_escalation_check_summary`, `_stages` | Display-only trace for the UI: the outcome of all four D5 checks, and the D5 → D3 → D4 → D1/D2 path with the stage where the case stopped. They never affect the decision. |
+| | `_escalation_check_summary`, `_stages`, `_cost_formula`, `_cost_limit`, `_confidence_basis` | Display-only trace for the UI: the outcome of all four D5 checks, and the D5 → D3 → D4 → D1/D2 path with the stage where the case stopped. They never affect the decision. `_confidence_basis` mirrors `_confidence` line by line; a test checks the lines always add up to the real confidence. |
 | | `_pct` | Percent formatting: shows one decimal near a threshold so "60.4%" never prints as "60%". |
 | `app/static/app.js` | `renderResult`, `caseNote`, `checkHealth` | Renders the recommendation from the API response only. "Copy case note" produces a ticket-ready summary, the status pill polls the real `/health`, and the panel warns when inputs change after a decision. |
 | `scripts/generate_cases.py` | `generate` | Seeded synthetic scenarios with labels assigned by construction. |

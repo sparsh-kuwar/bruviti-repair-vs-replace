@@ -221,3 +221,22 @@ def test_trace_lists_every_escalation_check(client):
     assert len(checks) == 4
     assert checks["Repeat repairs with negative sentiment"] is True
     assert checks["Safety hazard in symptom text"] is False
+
+
+def test_confidence_basis_always_adds_up_to_confidence(client):
+    # Display-only explanation must never disagree with the real number.
+    variants = [case(), case(warranty_status="unknown"), case(technician_travel_minutes=None),
+                case(warranty_status="in_warranty", parts=[{"sku": "P", "price": 19000, "lead_time_days": 2}]),
+                case(symptom_text="smoke"), case(replacement_price=None), case(product_age_months=None),
+                case(warranty_status="unknown", technician_travel_minutes=None, prior_repairs_12m=None,
+                     customer_sentiment="negative")]
+    for data in variants:
+        body = client.post("/decide?explain=true", json=data).json()
+        basis = body["trace"]["confidence_basis"]
+        assert round(sum(line["delta"] for line in basis), 2) == body["confidence"], basis
+
+
+def test_cost_formula_exposes_every_component(client):
+    f = client.post("/decide?explain=true", json=case()).json()["trace"]["cost_formula"]
+    assert (f["parts_total"], f["labour"], f["travel"], f["total"]) == (6200.0, 1350.0, 600.0, 8150.0)
+    assert f["labour_hours"] == 1.5 and f["labour_rate_per_hour"] == 900 and f["technician_travel_minutes"] == 40

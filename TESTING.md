@@ -41,7 +41,7 @@ Every requirement maps to the automated tests that cover it (matched by test nam
 | R06 | reason is one sentence naming the deciding rule | Brief §3 | 4 | ✅ 4/4 | TC-013 |
 | R07 | GET /health returns 200 {"status": "ok"} | Brief §4 | 1 | ✅ 1/1 | TC-001 |
 | R08 | Single page served at / by the same process; no remote assets | Brief §4–5 | 2 | ✅ 2/2 | TC-002, TC-003 |
-| R09 | Works with the network off; tests run offline | Brief §4–5 | 292 | ✅ 292/292 | — |
+| R09 | Works with the network off; tests run offline | Brief §4–5 | 294 | ✅ 294/294 | — |
 | R10 | Each request answered in under 1 second | Brief §4 | 1 | ✅ 1/1 | TC-007 |
 | R11 | D0 repair-cost formula; null only when it cannot be computed | Appendix D0 | 15 | ✅ 15/15 | TC-020, TC-021, TC-022, TC-023, TC-024, TC-025, TC-026 |
 | R12 | D1a in/extended warranty: replace if cost > 60% of replacement | Appendix D1 | 8 | ✅ 8/8 | TC-030, TC-031, TC-032 |
@@ -160,7 +160,7 @@ A selection of representative cases. The full suite has more, mostly parametrise
 
 ### Manual UI checks
 
-The UI is not scored automatically, and there is no automated browser test suite. These checks were run by driving the real page in headless Chrome. **Last run: 13 October 2026.**
+The UI is not scored automatically, and there is no automated browser test suite in the repo. These checks were run by driving the real page in headless Chrome, with UI-07 using real key events through the Chrome DevTools protocol. **Last run: 13 October 2026.**
 
 | ID | Check | Expected | Result |
 |---|---|---|---|
@@ -169,7 +169,10 @@ The UI is not scored automatically, and there is no automated browser test suite
 | UI-03 | Part added with a blank price | Escalate; reason names the missing part price | Pass |
 | UI-04 | Edit an input after a decision | "Inputs changed" banner appears; Ctrl+Enter re-runs and clears it | Pass |
 | UI-05 | Status pill | Shows "Policy engine online" from the real `/health` | Pass |
-| UI-06 | 390 px wide viewport | No horizontal page scroll (`scrollWidth == clientWidth == 390`) | Pass (after DEF-03 fix) |
+| UI-06 | 390, 820 and 1440 px viewports | No horizontal page scroll (`scrollWidth == clientWidth`) | Pass at all three |
+| UI-07 | Keyboard only, real key events via Chrome DevTools | Tab order follows the visual order (skip links → samples → fields top to bottom → submit); every focused control shows a visible focus ring; Enter on a sample loads it; Ctrl+Enter decides and moves focus to the Recommendation heading; Tab reaches "All policy checks" and Enter opens it | Pass (22 controls, none without a visible ring) |
+| UI-08 | Colour contrast of every text/background token pair (WCAG formula) | Text ≥ 4.5:1; focus ring and input borders ≥ 3:1 | Pass after DEF-09 fix (lowest text pair 5.19:1; borders 3.06:1) |
+| UI-09 | Cost breakdown for C-2001 | Parts 6,200 + labour 1.5 h × 900 = 1,350 + travel 40 min ÷ 60 × 900 = 600 = 8,150 | Pass; also asserted in `test_cost_formula_exposes_every_component` |
 
 ## 4. Defect log
 
@@ -184,6 +187,8 @@ Each defect found during development, how it was found, and the regression test 
 | DEF-05 | High | Exploratory challenge | "body mein current lag raha hai" (Hinglish for getting a shock) was not escalated | No Hinglish vocabulary | Short documented Hinglish phrase list | TC-086, TC-132 |
 | DEF-06 | Medium | Exploratory challenge | Warranty `"OOW"` returned **HTTP 422** | Abbreviation not in the alias table | `OOW` / `IW` / `EW` aliases; other abbreviations stay invalid | TC-117, TC-118, TC-133 |
 | DEF-07 | Medium | Manual probe while fixing DEF-05 | "koi dhuan nahi, chingari bhi nahi" ("no smoke, no sparks either") was flagged as a hazard | Negation check returned early and never ran the post-negation check | Post-negation checked first; allow "bhi" | TC-087 |
+| DEF-09 | Medium | Contrast check during the UI polish | Input borders were 1.62:1 against white, below the 3:1 WCAG 1.4.11 minimum for control boundaries | Light border token `#c4ccd8` | Border token `#8a94a6` (3.06:1) | UI-08 (manual) |
+| DEF-10 | Low | Code reading during the UI polish | The display-helper block in `app/policy.py` existed twice (identical copies) | An edit replaced a section marker that appeared twice in the file | Duplicate removed; marker renamed so it is unique | Full suite (294 tests) |
 | DEF-08 | Medium | Code review, before the first test run | Contraction rule would have rewritten "element" as "eleme not" | Regex `n'?t` made the apostrophe optional | Require the apostrophe | `test_normalise_contractions` |
 
 Open defects: none known. Known limitations, which are not defects, are listed in NOTES.md and DATA.md.
@@ -191,14 +196,14 @@ Open defects: none known. Known limitations, which are not defects, are listed i
 ## 5. Latest run
 
 <!-- GENERATED:LATEST-RUN:START -->
-- **Run at:** 2026-10-13 08:40 UTC
+- **Run at:** 2026-10-13 09:02 UTC
 - **Environment:** Python 3.13.7 on Darwin arm64; FastAPI 0.115.6, Pydantic 2.10.4; network blocked by `tests/conftest.py`
-- **Result:** ✅ PASS: 292 passed, 0 failed, 0 skipped, 292 total, 2.8 s
+- **Result:** ✅ PASS: 294 passed, 0 failed, 0 skipped, 294 total, 2.8 s
 
 | Test file | Tests | Passed | Failed | Time (s) |
 |---|---|---|---|---|
-| `tests/test_api.py` | 65 | 65 | 0 | 2.54 |
-| `tests/test_challenge.py` | 14 | 14 | 0 | 0.01 |
+| `tests/test_api.py` | 67 | 67 | 0 | 2.53 |
+| `tests/test_challenge.py` | 14 | 14 | 0 | 0.02 |
 | `tests/test_corpora.py` | 8 | 8 | 0 | 0.23 |
 | `tests/test_cost.py` | 13 | 13 | 0 | 0.00 |
 | `tests/test_escalation.py` | 24 | 24 | 0 | 0.03 |

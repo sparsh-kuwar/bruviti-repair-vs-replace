@@ -61,71 +61,6 @@ D4_MAX_IN_WARRANTY_AGE = 24          # unknown -> out_of_warranty if age > 24 mo
 D5A_MIN_PRIOR_REPAIRS = 2            # >= 2 prior repairs + negative sentiment
 NEAR_THRESHOLD = Fraction(2, 100)    # D6: within 2 percentage points (absolute)
 
-# ---------------------------------------------------------------- trace for the UI
-def _escalation_check_summary(case: ServiceCase, cost: CostResult, hazards: List[Hazard],
-                              contradictions: List[Contradiction]) -> List[Dict[str, Any]]:
-    """Every D5 trigger with its outcome, for the UI's policy-check list.
-    Display only: the decision itself comes from _escalation_triggers."""
-    prior = case.prior_repairs_12m
-    sentiment = case.customer_sentiment.value if case.customer_sentiment else None
-    repeat = prior is not None and prior >= D5A_MIN_PRIOR_REPAIRS and sentiment == "negative"
-    if cost.computable:
-        cost_detail = "all part prices and labour hours present"
-    else:
-        missing = cost.missing_part_prices and ["part price: " + ", ".join(cost.missing_part_prices)] or []
-        missing += ["labour hours"] if cost.labour_hours_missing else []
-        missing += ["labour rate"] if cost.labour_rate_missing else []
-        cost_detail = "missing " + "; ".join(missing)
-    return [
-        {"check": "Safety hazard in symptom text", "triggered": bool(hazards),
-         "detail": ", ".join(h.label for h in hazards) if hazards else "none found"},
-        {"check": "Symptom text consistent with case fields", "triggered": bool(contradictions),
-         "detail": "; ".join(c.detail for c in contradictions) if contradictions else "no conflict found"},
-        {"check": "Repeat repairs with negative sentiment", "triggered": repeat,
-         "detail": f"{'?' if prior is None else _num(prior)} repairs in 12 months, sentiment {sentiment or 'not given'}"},
-        {"check": "Repair cost can be computed", "triggered": not cost.computable, "detail": cost_detail},
-    ]
-
-
-def _stages(stop: str, decision: str, rule: str, case: ServiceCase,
-            branches: Optional[List[Dict[str, str]]]) -> List[Dict[str, str]]:
-    """The precedence path (D6) with where this case stopped, for the UI stepper."""
-    status = case.warranty_status.value
-    if stop == "D5":
-        return [
-            {"stage": "Escalation checks", "rule": "D5", "status": "stopped", "detail": "escalate"},
-            {"stage": "Travel override", "rule": "D3", "status": "skipped", "detail": "not reached"},
-            {"stage": "Warranty mapping", "rule": "D4", "status": "skipped", "detail": "not reached"},
-            {"stage": "Cost and age rule", "rule": "D1 / D2", "status": "skipped", "detail": "not reached"},
-        ]
-    stages = [{"stage": "Escalation checks", "rule": "D5", "status": "passed", "detail": "no trigger"}]
-    if stop == "D3":
-        return stages + [
-            {"stage": "Travel override", "rule": "D3", "status": "stopped", "detail": "replace"},
-            {"stage": "Warranty mapping", "rule": "D4", "status": "skipped", "detail": "not reached"},
-            {"stage": "Cost and age rule", "rule": "D1 / D2", "status": "skipped", "detail": "not reached"},
-        ]
-    stages.append({"stage": "Travel override", "rule": "D3", "status": "passed", "detail": "not met"})
-    if status != "unknown":
-        mapping = {"stage": "Warranty mapping", "rule": "D4", "status": "passed",
-                   "detail": f"not needed ({status})"}
-    elif branches and len(branches) > 1:
-        mapping = {"stage": "Warranty mapping", "rule": "D4", "status": "passed",
-                   "detail": "age missing: both readings evaluated"}
-    else:
-        target = "out_of_warranty" if branches and branches[0]["path"] == "D2" else "in_warranty"
-        mapping = {"stage": "Warranty mapping", "rule": "D4", "status": "passed", "detail": f"treated as {target}"}
-    stages.append(mapping)
-    paths = sorted({b["path"] for b in branches or []})
-    label = " / ".join(paths) or "D1 / D2"
-    if decision == "escalate":
-        stages.append({"stage": "Cost and age rule", "rule": label, "status": "stopped",
-                       "detail": "missing input decides: escalate"})
-    else:
-        stages.append({"stage": "Cost and age rule", "rule": rule, "status": "stopped", "detail": decision})
-    return stages
-
-
 # ---------------------------------------------------------------- confidence
 # Heuristic, not a calibrated probability. Anchors are the brief's examples
 # (0.90 plain repair, 0.85 rule-based replace, 0.70 escalation).
@@ -417,45 +352,125 @@ def _escalation_check_summary(case: ServiceCase, cost: CostResult, hazards: List
 
 
 def _stages(stop: str, decision: str, rule: str, case: ServiceCase,
-            branches: Optional[List[Dict[str, str]]]) -> List[Dict[str, str]]:
-    """The precedence path (D6) with where this case stopped, for the UI stepper."""
+            branches: Optional[List[Dict[str, str]]], ratio: Optional[Fraction] = None,
+            triggered: Optional[List[str]] = None) -> List[Dict[str, str]]:
+    """The precedence path (D6) with where this case stopped, for the UI.
+
+    ``detail`` is a short status; ``explain`` is one plain sentence built from
+    the same inputs the rules used. Display only.
+    """
     status = case.warranty_status.value
+    travel = case.technician_travel_minutes
+    not_reached = "Not evaluated: an earlier rule already decided the case."
     if stop == "D5":
         return [
-            {"stage": "Escalation checks", "rule": "D5", "status": "stopped", "detail": "escalate"},
-            {"stage": "Travel override", "rule": "D3", "status": "skipped", "detail": "not reached"},
-            {"stage": "Warranty mapping", "rule": "D4", "status": "skipped", "detail": "not reached"},
-            {"stage": "Cost and age rule", "rule": "D1 / D2", "status": "skipped", "detail": "not reached"},
+            {"stage": "Escalation checks", "rule": "D5", "status": "stopped", "detail": "escalate",
+             "explain": "Triggered: " + "; ".join(triggered or []) + "."},
+            {"stage": "Travel override", "rule": "D3", "status": "skipped", "detail": "not reached", "explain": not_reached},
+            {"stage": "Warranty mapping", "rule": "D4", "status": "skipped", "detail": "not reached", "explain": not_reached},
+            {"stage": "Cost and age rule", "rule": "D1 / D2", "status": "skipped", "detail": "not reached", "explain": not_reached},
         ]
-    stages = [{"stage": "Escalation checks", "rule": "D5", "status": "passed", "detail": "no trigger"}]
+    stages = [{"stage": "Escalation checks", "rule": "D5", "status": "passed", "detail": "no trigger",
+               "explain": "No safety hazard or contradiction in the text, no repeat-repair trigger, and the cost can be computed."}]
     if stop == "D3":
         return stages + [
-            {"stage": "Travel override", "rule": "D3", "status": "stopped", "detail": "replace"},
-            {"stage": "Warranty mapping", "rule": "D4", "status": "skipped", "detail": "not reached"},
-            {"stage": "Cost and age rule", "rule": "D1 / D2", "status": "skipped", "detail": "not reached"},
+            {"stage": "Travel override", "rule": "D3", "status": "stopped", "detail": "replace",
+             "explain": f"Travel {_num(travel)} min is over 120 and the repair cost is "
+                        f"{_pct(ratio) if ratio is not None else 'over 40%'} of replacement, over the 40% limit."},
+            {"stage": "Warranty mapping", "rule": "D4", "status": "skipped", "detail": "not reached", "explain": not_reached},
+            {"stage": "Cost and age rule", "rule": "D1 / D2", "status": "skipped", "detail": "not reached", "explain": not_reached},
         ]
-    stages.append({"stage": "Travel override", "rule": "D3", "status": "passed", "detail": "not met"})
+    if travel is None:
+        d3_explain = "Travel time is missing, so the override needs positive evidence and was not applied."
+    elif travel <= D3_MIN_TRAVEL_MINUTES:
+        d3_explain = f"Travel {_num(travel)} min is not over 120 min, so the override does not apply."
+    else:
+        d3_explain = (f"Travel {_num(travel)} min is over 120, but the repair cost is not shown to be over "
+                      f"40% of replacement, so the override does not apply.")
+    stages.append({"stage": "Travel override", "rule": "D3", "status": "passed", "detail": "not met",
+                   "explain": d3_explain})
     if status != "unknown":
         mapping = {"stage": "Warranty mapping", "rule": "D4", "status": "passed",
-                   "detail": f"not needed ({status})"}
+                   "detail": f"not needed ({status})",
+                   "explain": f"Warranty status is known ({status}), so no mapping is needed."}
     elif branches and len(branches) > 1:
         mapping = {"stage": "Warranty mapping", "rule": "D4", "status": "passed",
-                   "detail": "age missing: both readings evaluated"}
+                   "detail": "age missing: both readings evaluated",
+                   "explain": "Warranty is unknown and product age is missing, so both the in-warranty and "
+                              "out-of-warranty readings were evaluated."}
     else:
         target = "out_of_warranty" if branches and branches[0]["path"] == "D2" else "in_warranty"
-        mapping = {"stage": "Warranty mapping", "rule": "D4", "status": "passed", "detail": f"treated as {target}"}
+        cmp = "over" if target == "out_of_warranty" else "not over"
+        mapping = {"stage": "Warranty mapping", "rule": "D4", "status": "passed", "detail": f"treated as {target}",
+                   "explain": f"Warranty is unknown; age {_num(case.product_age_months)} months is {cmp} 24, "
+                              f"so it is treated as {target.replace('_', ' ')}."}
     stages.append(mapping)
     paths = sorted({b["path"] for b in branches or []})
     label = " / ".join(paths) or "D1 / D2"
     if decision == "escalate":
         stages.append({"stage": "Cost and age rule", "rule": label, "status": "stopped",
-                       "detail": "missing input decides: escalate"})
+                       "detail": "missing input decides: escalate",
+                       "explain": "A missing input could change the answer, so the case is escalated."})
     else:
-        stages.append({"stage": "Cost and age rule", "rule": rule, "status": "stopped", "detail": decision})
+        stages.append({"stage": "Cost and age rule", "rule": rule, "status": "stopped", "detail": decision,
+                       "explain": f"Rule {rule} decided the case: {decision}."})
     return stages
 
 
-# ---------------------------------------------------------------- confidence
+def _cost_formula(case: ServiceCase, cost: CostResult) -> Dict[str, Any]:
+    """The D0 inputs and components behind the estimate, for display."""
+    def money(x: Optional[Fraction]) -> Optional[float]:
+        return None if x is None else round(float(x), 2)
+    return {
+        "parts": [{"sku": p.sku or p.description or f"part #{i + 1}", "price": p.price}
+                  for i, p in enumerate(case.parts)],
+        "labour_hours": case.labour_hours,
+        "labour_rate_per_hour": case.labour_rate_per_hour,
+        "technician_travel_minutes": case.technician_travel_minutes,
+        "replacement_price": case.replacement_price,
+        "parts_total": money(cost.parts_total),
+        "labour": money(cost.labour),
+        "travel": money(cost.travel),
+        "total": cost.rounded(),
+    }
+
+
+def _cost_limit(rule: str) -> Optional[Dict[str, Any]]:
+    """The cost-ratio limit of the deciding rule, if that rule is a ratio test."""
+    limits = {"D1a": D1A_MAX_RATIO, "D2": D2_MAX_RATIO, "D3": D3_MIN_RATIO}
+    if rule not in limits:
+        return None
+    return {"rule": rule, "limit": float(limits[rule])}
+
+
+def _confidence_basis(decision: str, ctx: _Ctx, unknown_warranty: bool, confidence: float) -> List[Dict[str, Any]]:
+    """How the confidence number was built, line by line, for display.
+
+    Mirrors _confidence (and the fixed escalation values) without changing it;
+    tests/test_api.py checks that the lines always add up to the confidence.
+    """
+    if decision == "escalate":
+        if confidence == CONF_ESCALATE_TEXT_ONLY:
+            return [{"label": "Escalation from the text-contradiction heuristic only", "delta": confidence}]
+        if confidence == CONF_ESCALATE_UNDETERMINED:
+            return [{"label": "Escalation because a missing input decides the case", "delta": confidence}]
+        return [{"label": "Escalation required by a D5 rule", "delta": confidence}]
+    lines = [{"label": f"Base for a rule-based {decision}", "delta": CONF_BASE[decision]}]
+    if unknown_warranty:
+        lines.append({"label": "Warranty unknown (D4)", "delta": -PENALTY_UNKNOWN_WARRANTY})
+    if ctx.near:
+        lines.append({"label": "A value is within 2 percentage points of a threshold (D6)", "delta": -PENALTY_NEAR_THRESHOLD})
+    if ctx.missing:
+        n = len(ctx.missing)
+        lines.append({"label": f"{n} input{'s' if n > 1 else ''} missing that did not change the decision",
+                      "delta": -min(MAX_MISSING_PENALTY, PENALTY_PER_MISSING_INPUT * n)})
+    raw = sum(line["delta"] for line in lines)
+    if round(raw, 2) != confidence:
+        lines.append({"label": f"Kept within the {CONF_FLOOR:.2f}-{CONF_CEIL:.2f} range", "delta": confidence - raw})
+    return [{"label": line["label"], "delta": round(line["delta"], 2)} for line in lines]
+
+
+# ---------------------------------------------------------------- confidence calculation
 def _confidence(decision: str, ctx: _Ctx, unknown_warranty: bool) -> float:
     c = CONF_BASE[decision]
     if unknown_warranty:
@@ -502,12 +517,16 @@ def decide(case: ServiceCase) -> Result:
     }
 
     def finish(decision: str, reason: str, rule: str, confidence: float,
-               stop: str, branches: Optional[List[Dict[str, str]]] = None) -> Result:
+               stop: str, branches: Optional[List[Dict[str, str]]] = None,
+               triggered: Optional[List[str]] = None) -> Result:
         trace.update({
             "rule": rule,
             "near_threshold": ctx.near,
             "missing_inputs": ctx.missing,
-            "stages": _stages(stop, decision, rule, case, branches),
+            "stages": _stages(stop, decision, rule, case, branches, _ratio(ctx), triggered),
+            "cost_formula": _cost_formula(case, cost),
+            "cost_limit": _cost_limit(rule),
+            "confidence_basis": _confidence_basis(decision, ctx, unknown_warranty, confidence),
         })
         return Result(case.case_id, decision, cost.rounded(), confidence, reason, trace)
 
@@ -517,7 +536,7 @@ def decide(case: ServiceCase) -> Result:
         text_only = bool(contradictions) and len(fragments) == len(contradictions)
         conf = CONF_ESCALATE_TEXT_ONLY if text_only else CONF_BASE["escalate"]
         reason = "Escalate (rule D5): " + "; ".join(fragments) + "."
-        return finish("escalate", reason, "D5", conf, stop="D5")
+        return finish("escalate", reason, "D5", conf, stop="D5", triggered=fragments)
 
     # 2. D3 travel override.
     d3 = _rule_d3(ctx)
