@@ -1,0 +1,72 @@
+# Runs the offline test suite and a fresh-start check on every push.
+# The fresh-start job does what a grader does: run ./run.sh on a clean machine,
+# wait for /health, and send the brief's three examples.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install pinned dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run test suite (network blocked inside the tests)
+        run: python -m pytest -q -p no:warnings --junitxml=junit.xml
+      - name: Test report (traceability, catalogue, metrics)
+        if: always()
+        run: python scripts/test_report.py --junit junit.xml --summary >> "$GITHUB_STEP_SUMMARY"
+
+  fresh-start:
+    name: Fresh clone starts with ./run.sh
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Start the service with the documented command
+        run: nohup ./run.sh > server.log 2>&1 &
+      - name: Wait for /health
+        run: |
+          for i in $(seq 1 180); do
+            if curl -sf http://localhost:8000/health | grep -q '"status":"ok"'; then echo "healthy after ${i}s"; exit 0; fi
+            sleep 1
+          done
+          echo "service did not become healthy"; cat server.log; exit 1
+      - name: UI is served at /
+        run: curl -sf http://localhost:8000/ | grep -q 'id="case-form"'
+      - name: The brief's three examples match
+        run: |
+          python - <<'PY'
+          import json, urllib.request
+          for cid in ("C-2001", "C-2002", "C-2003"):
+              body = open(f"examples/{cid}.request.json").read().encode()
+              req = urllib.request.Request("http://localhost:8000/decide", data=body,
+                                           headers={"content-type": "application/json"})
+              got = json.load(urllib.request.urlopen(req, timeout=5))
+              exp = json.load(open(f"examples/{cid}.expected.json"))
+              for key in ("case_id", "decision", "estimated_repair_cost", "confidence"):
+                  assert got[key] == exp[key], (cid, key, got[key], exp[key])
+              print(cid, "ok:", got["decision"], got["estimated_repair_cost"], got["confidence"])
+          PY
+      - name: Server log
+        if: always()
+        run: cat server.log

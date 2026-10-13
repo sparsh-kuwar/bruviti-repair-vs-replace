@@ -48,7 +48,8 @@ def test_explain_adds_trace_only_on_request(client):
     assert set(body) == RESPONSE_KEYS | {"trace"} and body["trace"]["rule"] == "D2"
 
 
-@pytest.mark.parametrize("cid", ["C-9", "  spaced id  ", "ünïcode-✓", 12345])
+@pytest.mark.parametrize("cid", ["C-9", "  spaced id  ", "ünïcode-✓", 12345],
+                         ids=["plain", "spaces", "unicode", "integer"])
 def test_case_id_echoed_unchanged(client, cid):
     assert client.post("/decide", json=case(case_id=cid)).json()["case_id"] == cid
 
@@ -71,7 +72,10 @@ def test_case_id_echoed_unchanged(client, cid):
     {k: v for k, v in case().items() if k != "case_id"},
     case(case_id=None),
     case(case_id=""),
-])
+], ids=["unknown-product", "unknown-fault", "unknown-warranty", "unknown-sentiment",
+        "negative-replacement-price", "negative-labour-hours", "negative-travel",
+        "negative-part-price", "non-numeric-rate", "parts-not-a-list", "boolean-price",
+        "missing-case-id", "null-case-id", "empty-case-id"])
 def test_invalid_input_is_a_clean_422(client, payload):
     r = client.post("/decide", json=payload)
     assert r.status_code == 422
@@ -80,7 +84,8 @@ def test_invalid_input_is_a_clean_422(client, payload):
 
 @pytest.mark.parametrize("raw", ['{"case_id": "x", "replacement_price": NaN}',
                                  '{"case_id": "x", "replacement_price": Infinity}',
-                                 '{"case_id": "x", "labour_hours": -Infinity}'])
+                                 '{"case_id": "x", "labour_hours": -Infinity}'],
+                         ids=["nan", "infinity", "negative-infinity"])
 def test_nan_and_infinity_rejected(client, raw):
     r = client.post("/decide", content=raw, headers={"content-type": "application/json"})
     assert r.status_code == 422

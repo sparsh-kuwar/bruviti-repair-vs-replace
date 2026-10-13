@@ -62,6 +62,8 @@ The challenge set first scored **11/14**. It missed "sparkes from the plug point
 
 The corpus did find real bugs. The first run missed 3 of 40 hazard cases, all worded "the casing gave my son a shock", because the shock pattern needed the verb right next to "shock". It now allows up to three words in between, and still excludes "shock absorber". The tests also exposed a 500 error on `NaN` inputs, which is now fixed.
 
+The test plan, traceability matrix, test-case catalogue and defect log are in [TESTING.md](TESTING.md).
+
 ## What I expect to break on real data
 
 - **Unseen symptom wording.** Hazards described without the listed words ("acrid haze", "plastic melting smell", "it went bang and the lights went out"), misspellings not on the explicit list ("spaarks"), other languages and Hinglish phrasings beyond the documented few, and abbreviations are missed. Hazard recall is the weakest point, and a miss there is the costly error.

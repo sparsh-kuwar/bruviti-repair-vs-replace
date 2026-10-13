@@ -21,6 +21,7 @@ from app.text import detect_fault_topics, find_contradictions, find_safety_hazar
     ("electric shock when touching the door", "electric shock"),
     ("it shocked me", "electric shock"),
     ("I got a mild shock from the tap", "electric shock"),
+    ("the casing gave my son a shock", "electric shock"),  # regression: found by synthetic corpus
     ("getting current from the body of the machine", "electric shock"),
     ("caught fire", "fire"),
     ("caught on fire last night", "fire"),
